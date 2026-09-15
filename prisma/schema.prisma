@@ -1,0 +1,59 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------
+// OUR DATA MODELS
+// ------------------------------------------------------
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // Hashed password
+  username  String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // A user can have many library entries (One-to-Many relationship)
+  library LibraryEntry[]
+}
+
+model Manga {
+  id          String   @id // We will use MangaDex's UUIDs
+  title       String
+  description String?  // The '?' makes it optional (nullable in the database)
+  coverUrl    String?
+  status      String
+  year        Int?
+  tags        String[] // Array of strings (PostgreSQL supports this!)
+
+  // A manga can be in many users' libraries
+  libraryEntries LibraryEntry[]
+}
+
+model LibraryEntry {
+  id             String   @id @default(uuid())
+  status         String   // e.g., 'reading', 'completed'
+  currentChapter Int      @default(0)
+  rating         Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Foreign Keys and Relationships
+  userId  String
+  mangaId String
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  manga Manga @relation(fields: [mangaId], references: [id], onDelete: Cascade)
+
+  // A user can only have ONE entry per manga
+  @@unique([userId, mangaId])
+}

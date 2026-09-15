@@ -18,7 +18,7 @@
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "prettier": "^3.2.5",
-    "prisma": "8.0.0-rc.13",
+    "prisma": "^6.19.3",
     "turbo": "^2.10.12"
   },
   "packageManager": "pnpm@12.4.1",
@@ -26,6 +26,6 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@prisma/client": "^7.10.0"
+    "@prisma/client": "^6.19.3"
   }
 }
