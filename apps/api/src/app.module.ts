@@ -7,9 +7,10 @@ import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { LibraryModule } from './library/library.module';
+import { MangadexModule } from './mangadex/mangadex.module';
 
 @Module({
-  imports: [PrismaModule, UsersModule, AuthModule, LibraryModule],
+  imports: [PrismaModule, UsersModule, AuthModule, LibraryModule, MangadexModule],
   controllers: [AppController],
   providers: [AppService],
 })
