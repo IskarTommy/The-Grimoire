@@ -8,9 +8,10 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { LibraryModule } from './library/library.module';
 import { MangadexModule } from './mangadex/mangadex.module';
+import { AnilistModule } from './anilist/anilist.module';
 
 @Module({
-  imports: [PrismaModule, UsersModule, AuthModule, LibraryModule, MangadexModule],
+  imports: [PrismaModule, UsersModule, AuthModule, LibraryModule, MangadexModule, AnilistModule],
   controllers: [AppController],
   providers: [AppService],
 })
