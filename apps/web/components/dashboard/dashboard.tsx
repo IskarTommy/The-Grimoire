@@ -12,8 +12,9 @@ import { DiscoverView } from "./discover-view";
 import { StatsView } from "./stats-view";
 import { SettingsView } from "./settings-view";
 import { Footer } from "./footer";
-import { MEDIA_ITEMS, continueReading } from "@/lib/data";
+import { continueReading } from "@/lib/data";
 import type { NavKey, MediaItem } from "@/lib/types";
+import { useTrendingManga } from "@/hooks/use-anilist";
 
 type ViewMeta = {
   title: string;
@@ -55,35 +56,39 @@ const VIEW_META: Record<NavKey, ViewMeta> = {
   },
 };
 
-function filterForNav(nav: NavKey): MediaItem[] | null {
+function filterForNav(nav: NavKey, items:
+  MediaItem[]): MediaItem[] | null {
   switch (nav) {
-    case "ongoing":
-      return MEDIA_ITEMS.filter((i) => i.status === "ONGOING");
-    case "completed":
-      return MEDIA_ITEMS.filter((i) => i.status === "COMPLETED");
-    case "planned":
-      return MEDIA_ITEMS.filter((i) => i.status === "PLANNED");
-    case "anime":
-      return MEDIA_ITEMS.filter((i) => i.type === "ANIME");
+    case 'ongoing':
+      return items.filter((i) => i.status === 'ONGOING')
+    case 'completed':
+      return items.filter((i) => i.status === 'COMPLETED')
+    case 'planned':
+      return items.filter((i) => i.status === 'PLANNED')
+    case 'anime':
+      return items.filter((i) => i.type === 'ANIME')
     default:
       return null;
   }
 }
+
 
 export function Dashboard() {
   const [nav, setNav] = useState<NavKey>("library");
   const [query, setQuery] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const { media, loading } = useTrendingManga()
+
   const counts = useMemo(
     () => ({
-      library: MEDIA_ITEMS.length,
-      ongoing: MEDIA_ITEMS.filter((i) => i.status === "ONGOING").length,
-      completed: MEDIA_ITEMS.filter((i) => i.status === "COMPLETED").length,
-      planned: MEDIA_ITEMS.filter((i) => i.status === "PLANNED").length,
-      anime: MEDIA_ITEMS.filter((i) => i.type === "ANIME").length,
+      library: media.length,
+      ongoing: media.filter((i) => i.status === "ONGOING").length,
+      completed: media.filter((i) => i.status === "COMPLETED").length,
+      planned: media.filter((i) => i.status === "PLANNED").length,
+      anime: media.filter((i) => i.type === "ANIME").length,
     }),
-    [],
+    [media],
   );
 
   const meta = VIEW_META[nav];
@@ -94,11 +99,11 @@ export function Dashboard() {
     setQuery("");
   };
 
-  const branchItems = filterForNav(nav);
+  const branchItems = filterForNav(nav, media);
   const continueItems =
     nav === "anime"
-      ? continueReading(MEDIA_ITEMS).filter((i) => i.type === "ANIME")
-      : continueReading(MEDIA_ITEMS);
+      ? continueReading(media).filter((i) => i.type === "ANIME")
+      : continueReading(media);
 
   return (
     <div className="flex min-h-screen flex-col">

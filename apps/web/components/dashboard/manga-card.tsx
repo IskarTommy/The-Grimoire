@@ -47,16 +47,24 @@ export function MangaCard({ item, index = 0 }: MangaCardProps) {
         {/* bottom gradient */}
         <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
-        {/* Top row: type + status */}
+        {/* Top row: type + status + anime badge */}
         <div className="absolute inset-x-0 top-0 flex items-start justify-between p-2.5">
-          <span
-            className={cn(
-              "rounded-md border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide backdrop-blur-md",
-              type.className,
+          <div className="flex gap-1.5">
+            <span
+              className={cn(
+                "rounded-md border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide backdrop-blur-md",
+                type.className,
+              )}
+            >
+              {type.label}
+            </span>
+            {item.hasAnime && (
+              <span className="flex items-center gap-1 rounded-md border border-sky-300/30 bg-sky-500/20 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-sky-200 backdrop-blur-md shadow-[0_0_10px_rgba(14,165,233,0.2)]">
+                <Tv className="h-3 w-3" />
+                Anime
+              </span>
             )}
-          >
-            {type.label}
-          </span>
+          </div>
           <span
             className="flex items-center gap-1 rounded-full border border-white/10 bg-black/50 px-2 py-0.5 text-[10px] font-medium backdrop-blur-md"
             title={status.label}

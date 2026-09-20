@@ -28,6 +28,7 @@ export type MediaItem = {
   trending?: boolean;
   featured?: boolean;
   synopsis?: string;
+  hasAnime?: boolean;
 };
 
 export type NavKey =
