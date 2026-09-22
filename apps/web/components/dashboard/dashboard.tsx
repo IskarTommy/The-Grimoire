@@ -142,10 +142,10 @@ export function Dashboard() {
           <main className="flex-1 space-y-8 px-4 py-6 sm:px-6 sm:py-8">
             {nav === "library" && (
               <>
-                <Hero />
+                <Hero item={media[0]} />
                 <StatCards />
                 <ContinueReading items={continueItems} />
-                <LibraryView query={query} />
+                <LibraryView query={query} items={media} />
               </>
             )}
 
@@ -187,7 +187,7 @@ export function Dashboard() {
               </>
             )}
 
-            {nav === "discover" && <DiscoverView />}
+            {nav === "discover" && <DiscoverView items={media} />}
 
             {nav === "stats" && <StatsView />}
 

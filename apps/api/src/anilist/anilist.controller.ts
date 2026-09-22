@@ -12,4 +12,10 @@ export class AnilistController {
         return this.anilistService.getTrending();
     }
 
+    // This creates a route at: GET /anilist/seasonal
+    @Get('seasonal')
+    async getSeasonal() {
+        return this.anilistService.getSeasonal();
+    }
+
 }

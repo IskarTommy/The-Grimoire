@@ -27,8 +27,11 @@ export type MediaItem = {
   year: number;
   trending?: boolean;
   featured?: boolean;
+  bannerImage?: string;
   synopsis?: string;
+  origin?: string;
   hasAnime?: boolean;
+  airingAnimeTitle?: string;
 };
 
 export type NavKey =

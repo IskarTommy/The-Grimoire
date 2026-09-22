@@ -1,10 +1,10 @@
 "use client";
 
 import { Flame, Sparkles } from "lucide-react";
-import { trendingItems, MEDIA_ITEMS } from "@/lib/data";
 import { MangaGrid } from "./manga-grid";
 import { SectionHeader } from "./section-header";
 import { cn } from "@/lib/utils";
+import type { MediaItem } from "@/lib/types";
 
 const GENRES = [
   { name: "Dark Fantasy", count: 5, color: "from-violet-500 to-fuchsia-500" },
@@ -15,9 +15,14 @@ const GENRES = [
   { name: "Mystery", count: 2, color: "from-indigo-400 to-violet-500" },
 ];
 
-export function DiscoverView() {
-  const trending = trendingItems(MEDIA_ITEMS);
-  const newReleases = [...MEDIA_ITEMS].slice(0, 6);
+type DiscoverViewProps = {
+  items: MediaItem[];
+};
+
+export function DiscoverView({ items }: DiscoverViewProps) {
+  // We can just use the first 5 for trending, and the rest for new releases
+  const trending = items.slice(0, 5);
+  const newReleases = items.slice(5, 11);
 
   return (
     <div className="space-y-8">

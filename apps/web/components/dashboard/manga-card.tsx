@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Star, BookOpen, Tv, ArrowUpRight } from "lucide-react";
+import Link from "next/link";
 import type { MediaItem } from "@/lib/types";
 import { STATUS_META, TYPE_META, ACCENT_CLASSES } from "@/lib/data";
 import { cn } from "@/lib/utils";
@@ -20,20 +21,21 @@ export function MangaCard({ item, index = 0 }: MangaCardProps) {
   const total = isAnime ? item.totalEpisodes : item.totalChapters;
 
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 18 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{
-        duration: 0.4,
-        delay: Math.min(index * 0.05, 0.4),
-        ease: [0.22, 1, 0.36, 1],
-      }}
-      className={cn(
-        "group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] transition-all duration-300",
-        "hover:border-white/15 hover:-translate-y-1",
-        accent.glow,
-      )}
-    >
+    <Link href={`/manga/${item.id}`} className="block h-full">
+      <motion.article
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          duration: 0.4,
+          delay: Math.min(index * 0.05, 0.4),
+          ease: [0.22, 1, 0.36, 1],
+        }}
+        className={cn(
+          "group relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] transition-all duration-300",
+          "hover:border-white/15 hover:-translate-y-1",
+          accent.glow,
+        )}
+      >
       {/* Cover */}
       <div className="relative aspect-[3/4] overflow-hidden">
         <img
@@ -144,5 +146,6 @@ export function MangaCard({ item, index = 0 }: MangaCardProps) {
         style={{ mixBlendMode: "soft-light" }}
       />
     </motion.article>
+    </Link>
   );
 }
