@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { useTrendingManga, useSeasonalManga } from "@/hooks/use-anilist";
+import { useTrendingManga, useSeasonalManga, usePopularNewManga } from "@/hooks/use-anilist";
 import { MangaGrid } from "@/components/dashboard/manga-grid";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Tv, Search, User, ChevronLeft, ChevronRight } from "lucide-react";
@@ -15,6 +15,7 @@ import {
 import Autoplay from "embla-carousel-autoplay";
 import type { MediaItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { SearchModal } from "@/components/search/search-modal";
 
 function cleanSynopsis(synopsis?: string) {
   if (!synopsis) return "";
@@ -72,8 +73,21 @@ function PopularMangaList({ items }: { items: MediaItem[] }) {
 export default function LandingPage() {
   const { media, loading } = useTrendingManga();
   const { seasonal, loading: seasonalLoading } = useSeasonalManga();
+  const { popularNew, loading: popularNewLoading } = usePopularNewManga();
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     if (!api) return;
@@ -87,12 +101,15 @@ export default function LandingPage() {
     Autoplay({ delay: 6000, stopOnInteraction: true })
   );
 
-  // Guarantee hero items even if bannerImage is not set on all
-  const itemsWithBanner = media.filter((m) => m.bannerImage);
-  const heroItems = (itemsWithBanner.length >= 4 ? itemsWithBanner : media).slice(0, 6);
-  const latestUpdates = media.slice(6, 16);
+  // Dedicated Popular New Titles for the hero carousel
+  const heroSource = popularNew.length > 0 ? popularNew : media;
+  const itemsWithBanner = heroSource.filter((m) => m.bannerImage);
+  const heroItems = (itemsWithBanner.length >= 4 ? itemsWithBanner : heroSource).slice(0, 6);
+  const latestUpdates = media.slice(0, 10);
   // 6 items so popular sidebar exactly matches the height of 2 rows of latest updates
   const popularSidebar = [...media].sort((a, b) => b.rating - a.rating).slice(0, 6);
+
+  const heroLoading = popularNewLoading && heroSource.length === 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -109,14 +126,14 @@ export default function LandingPage() {
 
         {/* Search Bar + Profile from Screenshot 2 */}
         <div className="flex items-center gap-3 sm:gap-4">
-          <Link
-            href="/dashboard"
-            className="hidden sm:flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs text-white/60 hover:border-white/20 transition-colors"
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs text-white/60 hover:border-white/20 hover:text-white transition-colors cursor-pointer"
           >
-            <Search className="h-3.5 w-3.5 text-white/50" />
+            <Search className="h-3.5 w-3.5 text-violet-400" />
             <span>Search</span>
             <kbd className="rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-[10px] font-mono text-white/70">Ctrl K</kbd>
-          </Link>
+          </button>
           <Link href="/dashboard">
             <div className="h-8 w-8 rounded-full border border-white/15 bg-white/10 flex items-center justify-center text-white text-xs font-semibold shadow hover:bg-white/20 transition-colors" title="My Account">
               <User className="h-4 w-4" />
@@ -129,7 +146,7 @@ export default function LandingPage() {
       <main className="pb-20">
         {/* Full-bleed Hero Carousel (No Card Wrapper) */}
         <div className="relative h-[78vh] w-full min-h-[580px] max-h-[720px]">
-          {loading ? (
+          {heroLoading ? (
             <div className="h-full w-full bg-white/5 animate-pulse" />
           ) : (
             <Carousel
@@ -260,9 +277,12 @@ export default function LandingPage() {
             <section className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-6">
                  <h2 className="text-2xl font-bold font-display text-white">Latest Updates</h2>
-                 <Link href="/dashboard" className="text-sm font-semibold text-violet-400 hover:text-violet-300 flex items-center gap-1">
+                 <button
+                   onClick={() => setSearchOpen(true)}
+                   className="text-sm font-semibold text-violet-400 hover:text-violet-300 flex items-center gap-1 cursor-pointer"
+                 >
                    View all <ChevronRight className="h-4 w-4" />
-                 </Link>
+                 </button>
               </div>
               {loading ? (
                 <div className="h-[500px] bg-white/5 rounded-2xl animate-pulse" />
@@ -308,12 +328,12 @@ export default function LandingPage() {
                 Read the original source manga behind this season&apos;s hottest anime releases
               </p>
             </div>
-            <Link
-              href="/dashboard"
-              className="text-sm font-semibold text-violet-400 hover:text-violet-300 flex items-center gap-1 self-start sm:self-auto"
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="text-sm font-semibold text-violet-400 hover:text-violet-300 flex items-center gap-1 self-start sm:self-auto cursor-pointer"
             >
-              View all in Library <ChevronRight className="h-4 w-4" />
-            </Link>
+              Browse All Adaptations <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
           {seasonalLoading ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
@@ -326,6 +346,13 @@ export default function LandingPage() {
           )}
         </section>
       </main>
+
+      {/* Global Search & Filter Modal */}
+      <SearchModal
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        initialItems={media}
+      />
     </div>
   );
 }

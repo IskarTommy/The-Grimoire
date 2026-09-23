@@ -1,6 +1,6 @@
 "use client";
 
-import { useTrendingManga, useSeasonalManga } from "@/hooks/use-anilist";
+import { useTrendingManga, useSeasonalManga, usePopularNewManga } from "@/hooks/use-anilist";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Star, Play, Tv, BookOpen } from "lucide-react";
@@ -12,10 +12,14 @@ export default function MangaDetailsPage() {
   const id = params.id as string;
   const { media, loading: trendingLoading } = useTrendingManga();
   const { seasonal, loading: seasonalLoading } = useSeasonalManga();
-  const loading = trendingLoading && seasonalLoading;
+  const { popularNew, loading: popularNewLoading } = usePopularNewManga();
+  const loading = trendingLoading && seasonalLoading && popularNewLoading;
 
-  // Find the manga in either trending or seasonal list
-  const item = media.find((m) => m.id === id) || seasonal.find((m) => m.id === id);
+  // Find the manga in trending, seasonal, or popular-new list
+  const item =
+    media.find((m) => m.id === id) ||
+    seasonal.find((m) => m.id === id) ||
+    popularNew.find((m) => m.id === id);
 
   if (loading) {
     return <div className="min-h-screen bg-background animate-pulse" />;

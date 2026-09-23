@@ -114,4 +114,85 @@ export function useSeasonalManga() {
     }, []);
 
     return { seasonal, loading: loading };
-}
+}
+
+
+export function usePopularNewManga() {
+    const [popularNew, setPopularNew] = useState<MediaItem[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchPopularNew() {
+            try {
+                const response = await fetch('http://127.0.0.1:3000/anilist/popular-new');
+
+                if (!response.ok) {
+                    console.error('Popular New API returned status', response.status);
+                    setPopularNew([]);
+                    return;
+                }
+
+                const json = await response.json();
+
+                if (!Array.isArray(json)) {
+                    console.error('Popular New API returned non-array:', json);
+                    setPopularNew([]);
+                    return;
+                }
+
+                setPopularNew(json.map(mapAnilistItem));
+            } catch (error) {
+                console.error('Failed to fetch popular new manga', error);
+                setPopularNew([]);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        fetchPopularNew();
+    }, []);
+
+    return { popularNew, loading };
+}
+
+export interface SearchParams {
+    q?: string;
+    genre?: string;
+    country?: string;
+    sort?: string;
+    page?: number;
+    perPage?: number;
+}
+
+export async function searchMangaApi(params: SearchParams): Promise<MediaItem[]> {
+    const url = new URL('http://127.0.0.1:3000/anilist/search');
+    if (params.q) url.searchParams.set('q', params.q);
+    if (params.genre) url.searchParams.set('genre', params.genre);
+    if (params.country) url.searchParams.set('country', params.country);
+    if (params.sort) url.searchParams.set('sort', params.sort);
+    if (params.page) url.searchParams.set('page', String(params.page));
+    if (params.perPage) url.searchParams.set('perPage', String(params.perPage));
+
+    try {
+        const res = await fetch(url.toString());
+        if (!res.ok) return [];
+        const json = await res.json();
+        if (!Array.isArray(json)) return [];
+        return json.map(mapAnilistItem);
+    } catch (err) {
+        console.error('Failed to search manga:', err);
+        return [];
+    }
+}
+
+export async function fetchGenresApi(): Promise<string[]> {
+    try {
+        const res = await fetch('http://127.0.0.1:3000/anilist/genres');
+        if (!res.ok) return [];
+        const json = await res.json();
+        return Array.isArray(json) ? json : [];
+    } catch {
+        return [];
+    }
+}
+
