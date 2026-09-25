@@ -11,26 +11,28 @@ export class AuthService {
         private jwtService: JwtService,
     ) { }
 
-    async login(username: string, passwordPlain: string) {
-        //Step 1 confirm user exists
-        const user = await
-            this.usersService.findByUsername(username);
+    async login(identifier: string, passwordPlain: string) {
+        // Step 1: confirm user exists by username or email
+        const user = await this.usersService.findByIdentifier(identifier);
         if (!user) {
             throw new UnauthorizedException('Invalid credentials');
         }
 
-        //step 2 we check if the password maches the hashed version 
-        const isPasswordValid = await
-            bcrypt.compare(passwordPlain, user.password);
+        // Step 2: check if the password matches the hashed version 
+        const isPasswordValid = await bcrypt.compare(passwordPlain, user.password);
         if (!isPasswordValid) {
             throw new UnauthorizedException('Invalid credentials');
-        };
+        }
 
-        //step 3 we generate the JSON web tokens "ID card"
+        // Step 3: generate the JSON web token and return safe user profile
         const payload = { sub: user.id, username: user.username };
         return {
-            access_token: await
-                this.jwtService.signAsync(payload),
+            access_token: await this.jwtService.signAsync(payload),
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+            },
         };
     }
 

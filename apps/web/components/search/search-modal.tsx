@@ -49,14 +49,17 @@ export function SearchModal({ isOpen, onClose, initialItems = [] }: SearchModalP
     });
   }, []);
 
-  // Autofocus input when opened
+  // Autofocus input and reset filters to default when opened
   useEffect(() => {
     if (isOpen) {
+      setQuery("");
+      setSelectedOrigin("");
+      setSelectedGenre("");
+      setSelectedSort("POPULARITY_DESC");
       setTimeout(() => {
         inputRef.current?.focus();
       }, 50);
-      // Prepopulate with initial items if results are empty and no query
-      if (results.length === 0 && initialItems.length > 0 && !query) {
+      if (initialItems.length > 0) {
         setResults(initialItems.slice(0, 10));
       }
     }
@@ -159,9 +162,9 @@ export function SearchModal({ isOpen, onClose, initialItems = [] }: SearchModalP
               {ORIGIN_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
-                  onClick={() => setSelectedOrigin(opt.value)}
+                  onClick={() => setSelectedOrigin(selectedOrigin === opt.value ? "" : opt.value)}
                   className={cn(
-                    "rounded-lg px-2.5 py-1 text-xs font-medium transition-all shrink-0",
+                    "rounded-lg px-2.5 py-1 text-xs font-medium transition-all shrink-0 cursor-pointer",
                     selectedOrigin === opt.value
                       ? "bg-violet-600 text-white shadow-md shadow-violet-600/30"
                       : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"

@@ -17,23 +17,21 @@ export class AuthController {
 
     @Post('register')
     async register(@Body() body: RegisterDto) {
-        return this.userService.createUser(body.username, body.password,
-            body.email);
+        await this.userService.createUser(body.username, body.password, body.email);
+        // Automatically issue token and return user profile
+        return this.authService.login(body.username, body.password);
     }
 
     @HttpCode(HttpStatus.OK)
     @Post('login')
     async login(@Body() body: LoginDto) {
-        return this.authService.login(body.username,
-            body.password);
+        return this.authService.login(body.username, body.password);
     }
-
-    //2. Add the bouncer to this specific route!
 
     @UseGuards(JwtAuthGuard)
     @Get('me')
-    getProfile(@Request() req: any) {
-        // if they make it past the guard, passport automatically puts their ID card data inside this return statement 
-        return req.user;
+    async getProfile(@Request() req: any) {
+        const user = await this.userService.findById(req.user.userId);
+        return user || req.user;
     }
 }

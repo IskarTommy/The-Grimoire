@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Grimoire" }],
   icons: {
-    icon: "/favicon.ico",
+    icon: "/logo.svg",
   },
   openGraph: {
     title: "Grimoire — Manga & Anime Library",
@@ -50,6 +50,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { AuthProvider } from "@/contexts/auth-context";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -60,8 +62,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} font-sans antialiased`}
       >
-        {children}
-        <Toaster />
+        <AuthProvider>
+          {children}
+          <Toaster />
+        </AuthProvider>
       </body>
     </html>
   );

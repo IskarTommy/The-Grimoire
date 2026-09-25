@@ -195,4 +195,114 @@ export async function fetchGenresApi(): Promise<string[]> {
         return [];
     }
 }
+
+export function useTop100Manga(country?: string, genre?: string, page = 1) {
+    const [top100, setTop100] = useState<MediaItem[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let isMounted = true;
+        async function fetchTop100() {
+            setLoading(true);
+            try {
+                const url = new URL('http://127.0.0.1:3000/anilist/top-100');
+                url.searchParams.set('page', String(page));
+                url.searchParams.set('perPage', '50');
+                if (country) url.searchParams.set('country', country);
+                if (genre) url.searchParams.set('genre', genre);
+
+                const response = await fetch(url.toString());
+                if (!response.ok) {
+                    if (isMounted) setTop100([]);
+                    return;
+                }
+                const json = await response.json();
+                if (Array.isArray(json) && isMounted) {
+                    setTop100(json.map(mapAnilistItem));
+                }
+            } catch (err) {
+                console.error('Failed to fetch Top 100:', err);
+                if (isMounted) setTop100([]);
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        }
+        fetchTop100();
+        return () => { isMounted = false; };
+    }, [country, genre, page]);
+
+    return { top100, loading };
+}
+
+export function useLatestUpdatesManga(country?: string, genre?: string, page = 1) {
+    const [updates, setUpdates] = useState<MediaItem[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let isMounted = true;
+        async function fetchUpdates() {
+            setLoading(true);
+            try {
+                const url = new URL('http://127.0.0.1:3000/anilist/latest-updates');
+                url.searchParams.set('page', String(page));
+                url.searchParams.set('perPage', '50');
+                if (country) url.searchParams.set('country', country);
+                if (genre) url.searchParams.set('genre', genre);
+
+                const response = await fetch(url.toString());
+                if (!response.ok) {
+                    if (isMounted) setUpdates([]);
+                    return;
+                }
+                const json = await response.json();
+                if (Array.isArray(json) && isMounted) {
+                    setUpdates(json.map(mapAnilistItem));
+                }
+            } catch (err) {
+                console.error('Failed to fetch latest updates:', err);
+                if (isMounted) setUpdates([]);
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        }
+        fetchUpdates();
+        return () => { isMounted = false; };
+    }, [country, genre, page]);
+
+    return { updates, loading };
+}
+
+export function useUpcomingSeasonalManga() {
+    const [upcoming, setUpcoming] = useState<MediaItem[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let isMounted = true;
+        async function fetchUpcoming() {
+            setLoading(true);
+            try {
+                const response = await fetch('http://127.0.0.1:3000/anilist/upcoming-seasonal');
+                if (!response.ok) {
+                    if (isMounted) setUpcoming([]);
+                    return;
+                }
+                const json = await response.json();
+                if (Array.isArray(json) && isMounted) {
+                    setUpcoming(json.map(mapAnilistItem));
+                }
+            } catch (err) {
+                console.error('Failed to fetch upcoming seasonal:', err);
+                if (isMounted) setUpcoming([]);
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        }
+        fetchUpcoming();
+        return () => { isMounted = false; };
+    }, []);
+
+    return { upcoming, loading };
+}
+
+
 

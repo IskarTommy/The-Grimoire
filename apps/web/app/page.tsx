@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { useTrendingManga, useSeasonalManga, usePopularNewManga } from "@/hooks/use-anilist";
+import { useTrendingManga, useSeasonalManga, usePopularNewManga, useLatestUpdatesManga } from "@/hooks/use-anilist";
 import { MangaGrid } from "@/components/dashboard/manga-grid";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Tv, Search, User, ChevronLeft, ChevronRight } from "lucide-react";
@@ -16,6 +16,8 @@ import Autoplay from "embla-carousel-autoplay";
 import type { MediaItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { SearchModal } from "@/components/search/search-modal";
+import { UserMenu } from "@/components/navigation/user-menu";
+import { GrimoireLogo } from "@/components/ui/grimoire-logo";
 
 function cleanSynopsis(synopsis?: string) {
   if (!synopsis) return "";
@@ -74,6 +76,7 @@ export default function LandingPage() {
   const { media, loading } = useTrendingManga();
   const { seasonal, loading: seasonalLoading } = useSeasonalManga();
   const { popularNew, loading: popularNewLoading } = usePopularNewManga();
+  const { updates: latestUpdatesList, loading: latestUpdatesLoading } = useLatestUpdatesManga();
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -105,7 +108,7 @@ export default function LandingPage() {
   const heroSource = popularNew.length > 0 ? popularNew : media;
   const itemsWithBanner = heroSource.filter((m) => m.bannerImage);
   const heroItems = (itemsWithBanner.length >= 4 ? itemsWithBanner : heroSource).slice(0, 6);
-  const latestUpdates = media.slice(0, 10);
+  const latestUpdates = latestUpdatesList.slice(0, 10);
   // 6 items so popular sidebar exactly matches the height of 2 rows of latest updates
   const popularSidebar = [...media].sort((a, b) => b.rating - a.rating).slice(0, 6);
 
@@ -116,9 +119,7 @@ export default function LandingPage() {
       {/* Public Header with Grimoire Branding + Search (Ctrl K) + Profile Avatar */}
       <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between px-6 sm:px-12 lg:px-20 backdrop-blur-md border-b border-white/5 bg-background/70">
         <div className="flex items-center gap-2.5">
-          <div className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-lg">
-            <BookOpen className="h-4 w-4 text-white" />
-          </div>
+          <GrimoireLogo size={32} />
           <span className="font-display text-lg font-bold tracking-tight text-foreground">
             Grimoire
           </span>
@@ -134,11 +135,7 @@ export default function LandingPage() {
             <span>Search</span>
             <kbd className="rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-[10px] font-mono text-white/70">Ctrl K</kbd>
           </button>
-          <Link href="/dashboard">
-            <div className="h-8 w-8 rounded-full border border-white/15 bg-white/10 flex items-center justify-center text-white text-xs font-semibold shadow hover:bg-white/20 transition-colors" title="My Account">
-              <User className="h-4 w-4" />
-            </div>
-          </Link>
+          <UserMenu />
         </div>
       </header>
 
@@ -277,14 +274,14 @@ export default function LandingPage() {
             <section className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-6">
                  <h2 className="text-2xl font-bold font-display text-white">Latest Updates</h2>
-                 <button
-                   onClick={() => setSearchOpen(true)}
+                 <Link
+                   href="/latest-updates"
                    className="text-sm font-semibold text-violet-400 hover:text-violet-300 flex items-center gap-1 cursor-pointer"
                  >
                    View all <ChevronRight className="h-4 w-4" />
-                 </button>
+                 </Link>
               </div>
-              {loading ? (
+              {latestUpdatesLoading ? (
                 <div className="h-[500px] bg-white/5 rounded-2xl animate-pulse" />
               ) : (
                 <MangaGrid items={latestUpdates} />
@@ -301,8 +298,8 @@ export default function LandingPage() {
               ) : (
                 <>
                   <PopularMangaList items={popularSidebar} />
-                  <Link href="/dashboard">
-                    <Button variant="outline" className="w-full mt-4 border-white/10 bg-white/[0.02] text-white hover:bg-white/10">
+                  <Link href="/top-100">
+                    <Button variant="outline" className="w-full mt-4 border-white/10 bg-white/[0.02] text-white hover:bg-white/10 hover:border-violet-500/30 transition-all cursor-pointer">
                       View Top 100
                     </Button>
                   </Link>
@@ -328,12 +325,12 @@ export default function LandingPage() {
                 Read the original source manga behind this season&apos;s hottest anime releases
               </p>
             </div>
-            <button
-              onClick={() => setSearchOpen(true)}
+            <Link
+              href="/seasonal"
               className="text-sm font-semibold text-violet-400 hover:text-violet-300 flex items-center gap-1 self-start sm:self-auto cursor-pointer"
             >
               Browse All Adaptations <ChevronRight className="h-4 w-4" />
-            </button>
+            </Link>
           </div>
           {seasonalLoading ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
@@ -342,7 +339,7 @@ export default function LandingPage() {
               ))}
             </div>
           ) : (
-            <MangaGrid items={seasonal.slice(0, 15)} />
+            <MangaGrid items={seasonal.slice(0, 10)} />
           )}
         </section>
       </main>

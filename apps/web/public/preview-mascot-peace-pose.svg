@@ -1,0 +1,161 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <!-- Background Circle Radial Aura -->
+    <radialGradient id="poseBgGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3b1d6e"/>
+      <stop offset="70%" stop-color="#1f0a38"/>
+      <stop offset="100%" stop-color="#0d0417"/>
+    </radialGradient>
+
+    <!-- Hair Lavender Gradient -->
+    <linearGradient id="hairMascot" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#d8b4fe"/>
+      <stop offset="50%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#7e22ce"/>
+    </linearGradient>
+
+    <!-- Robe Purple Gradient -->
+    <linearGradient id="robeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3b1d6e"/>
+      <stop offset="100%" stop-color="#1e0c38"/>
+    </linearGradient>
+
+    <!-- Book Glowing Pages -->
+    <linearGradient id="bookPageGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fffbeb"/>
+      <stop offset="70%" stop-color="#fef08a"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+
+    <!-- Gold Accent Trim -->
+    <linearGradient id="goldAcc" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="60%" stop-color="#eab308"/>
+      <stop offset="100%" stop-color="#854d0e"/>
+    </linearGradient>
+
+    <filter id="bookGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Circular Outer Badge Background -->
+  <circle cx="60" cy="60" r="56" fill="url(#poseBgGrad)" stroke="#6b21a8" stroke-width="2"/>
+  <circle cx="60" cy="60" r="53" stroke="#a855f7" stroke-width="0.75" stroke-dasharray="2 3" opacity="0.4"/>
+
+  <!-- Magical Aura behind the open Book -->
+  <circle cx="34" cy="74" r="22" fill="#eab308" opacity="0.18" filter="url(#bookGlow)"/>
+
+  <!-- === 1. CHARACTER: TWIN BUNS & BACK HAIR === -->
+  <!-- Left Hair Bun -->
+  <circle cx="41" cy="25" r="9" fill="url(#hairMascot)" stroke="#1a0b2e" stroke-width="2"/>
+  <!-- Left Bun Ribbon / Bow -->
+  <path d="M 40 29 C 36 29, 32 34, 38 35 C 44 34, 42 29, 40 29 Z" fill="url(#goldAcc)" stroke="#1a0b2e" stroke-width="1.2"/>
+
+  <!-- Right Hair Bun -->
+  <circle cx="79" cy="25" r="9" fill="url(#hairMascot)" stroke="#1a0b2e" stroke-width="2"/>
+  <!-- Right Bun Ribbon / Bow -->
+  <path d="M 80 29 C 84 29, 88 34, 82 35 C 76 34, 78 29, 80 29 Z" fill="url(#goldAcc)" stroke="#1a0b2e" stroke-width="1.2"/>
+
+  <!-- Flowing Side Hair Strands -->
+  <path d="M 37 45 C 32 50, 31 62, 38 68 C 39 61, 41 53, 37 45 Z" fill="url(#hairMascot)" stroke="#1a0b2e" stroke-width="1.8"/>
+  <path d="M 83 45 C 88 50, 89 62, 82 68 C 81 61, 79 53, 83 45 Z" fill="url(#hairMascot)" stroke="#1a0b2e" stroke-width="1.8"/>
+
+  <!-- === 2. CHARACTER: BODY & ROBE === -->
+  <!-- Legs / Shoes -->
+  <path d="M 52 100 L 52 107 C 52 110, 56 110, 56 107 L 56 100" fill="#ffffff" stroke="#1a0b2e" stroke-width="1.8"/>
+  <path d="M 64 100 L 64 107 C 64 110, 68 110, 68 107 L 68 100" fill="#ffffff" stroke="#1a0b2e" stroke-width="1.8"/>
+
+  <!-- Mage Robe Dress -->
+  <path d="M 46 72 L 42 98 C 42 100, 78 100, 78 98 L 74 72 Z" fill="url(#robeGrad)" stroke="#1a0b2e" stroke-width="2"/>
+  <!-- Robe White Collar / Trim -->
+  <path d="M 42 98 L 78 98" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M 60 70 L 60 98" stroke="#ffffff" stroke-width="1.8"/>
+
+  <!-- Star Button at Collar -->
+  <path d="M 60 67 L 61 65 L 63 67 L 65 68 L 63 69 L 61 71 L 60 69 L 58 68 Z" fill="url(#goldAcc)" stroke="#1a0b2e" stroke-width="1"/>
+
+  <!-- === 3. CHARACTER: HEAD & FACE === -->
+  <!-- Cute Round Head Contour -->
+  <ellipse cx="60" cy="46" rx="20" ry="17" fill="#fff2eb" stroke="#1a0b2e" stroke-width="2"/>
+
+  <!-- Rosy Cute Blush -->
+  <ellipse cx="49" cy="52" rx="3.5" ry="1.8" fill="#f472b6" opacity="0.6"/>
+  <ellipse cx="71" cy="52" rx="3.5" ry="1.8" fill="#f472b6" opacity="0.6"/>
+
+  <!-- Left Open Sparkling Anime Eye -->
+  <g>
+    <!-- Upper Lash Line -->
+    <path d="M 47 44 C 48.5 41, 53.5 41, 55 44" fill="none" stroke="#1a0b2e" stroke-width="2.2" stroke-linecap="round"/>
+    <!-- Iris -->
+    <ellipse cx="51" cy="47" rx="3" ry="4" fill="#2e1065"/>
+    <!-- Sparkle Highlights -->
+    <circle cx="50" cy="45" r="1.3" fill="#ffffff"/>
+    <circle cx="52.2" cy="48.5" r="0.7" fill="#ffffff"/>
+  </g>
+
+  <!-- Right Winking Playful Anime Eye (Cute Arch Wink) -->
+  <path d="M 65 46 Q 69 41.5 73 45.5" fill="none" stroke="#1a0b2e" stroke-width="2.4" stroke-linecap="round"/>
+
+  <!-- Happy Smiling Mouth -->
+  <path d="M 57 53 Q 60 58 63 53 Z" fill="#e11d48" stroke="#1a0b2e" stroke-width="1.2"/>
+  <path d="M 58 53 Q 60 55 62 53" fill="#ffffff"/>
+
+  <!-- Cute Layered Bangs -->
+  <path d="M 40 40 C 44 32, 76 32, 80 40 C 78 46, 74 46, 71 41 C 68 47, 63 47, 60 41 C 57 47, 52 47, 49 41 C 46 46, 42 46, 40 40 Z" 
+        fill="url(#hairMascot)" stroke="#1a0b2e" stroke-width="2"/>
+
+  <!-- Hair White Shine Arc -->
+  <path d="M 46 36 Q 60 33 74 36" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" opacity="0.65" fill="none"/>
+
+  <!-- === 4. RIGHT HAND: CUTE PEACE SIGN ✌️ === -->
+  <!-- Right Arm reaching up/out -->
+  <path d="M 74 74 Q 84 76 86 64" fill="none" stroke="#1a0b2e" stroke-width="5" stroke-linecap="round"/>
+  <path d="M 74 74 Q 84 76 86 64" fill="none" stroke="url(#robeGrad)" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Peace Fingers (V-Sign ✌️) -->
+  <!-- Index finger -->
+  <path d="M 85 64 L 84 55 C 84 53, 87 53, 87 55 L 87 63" fill="#fff2eb" stroke="#1a0b2e" stroke-width="1.4"/>
+  <!-- Middle finger -->
+  <path d="M 87 63 L 90 56 C 91 54, 94 55, 93 57 L 89 64" fill="#fff2eb" stroke="#1a0b2e" stroke-width="1.4"/>
+  <!-- Folded fingers/palm -->
+  <ellipse cx="86" cy="64" rx="3.5" ry="3" fill="#fff2eb" stroke="#1a0b2e" stroke-width="1.4"/>
+
+  <!-- === 5. LEFT HAND: HOLDING THE OPEN GLOWING GRIMOIRE === -->
+  <!-- Left Arm reaching forward to hold book -->
+  <path d="M 46 74 Q 38 78 35 83" fill="none" stroke="#1a0b2e" stroke-width="5" stroke-linecap="round"/>
+  <path d="M 46 74 Q 38 78 35 83" fill="none" stroke="url(#robeGrad)" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- THE GLOWING GRIMOIRE BOOK (Held in her left hand) -->
+  <g>
+    <!-- Book Outer Cover Wings -->
+    <path d="M 34 85 C 24 85, 17 80, 16 78 L 19 60 C 26 62, 31 66, 34 67 C 37 66, 42 62, 49 60 L 52 78 C 51 80, 44 85, 34 85 Z" 
+          fill="#1b0a33" stroke="#eab308" stroke-width="1.8"/>
+
+    <!-- Left Open Page Glowing -->
+    <path d="M 34 83 C 25 83, 19 79, 18 77 L 20 62 C 26 64, 30 67, 34 68 Z" 
+          fill="url(#bookPageGlow)" stroke="#92400e" stroke-width="0.8"/>
+
+    <!-- Right Open Page Glowing -->
+    <path d="M 34 83 C 43 83, 49 79, 50 77 L 48 62 C 42 64, 38 67, 34 68 Z" 
+          fill="url(#bookPageGlow)" stroke="#92400e" stroke-width="0.8"/>
+
+    <!-- Gold Crescent Moon Rune on Left Page -->
+    <path d="M 27 68 C 24 71, 24 75, 27 77 C 25 76, 25 72, 27 68 Z" fill="#ca8a04"/>
+
+    <!-- Gold Four-Point Star on Right Page -->
+    <path d="M 42 68 L 43 71 L 45 72 L 43 73 L 42 76 L 41 73 L 39 72 L 41 71 Z" fill="#ca8a04"/>
+
+    <!-- Tiny Chibi Hand Fingers gripping bottom of the book -->
+    <ellipse cx="34" cy="85" rx="3.5" ry="2.2" fill="#fff2eb" stroke="#1a0b2e" stroke-width="1.2"/>
+  </g>
+
+  <!-- Radiant Magic Sparkles / Stars -->
+  <g filter="url(#bookGlow)">
+    <path d="M 17 56 L 18 53 L 19 56 L 22 57 L 19 58 L 18 61 L 17 58 L 14 57 Z" fill="#fde047"/>
+    <path d="M 52 56 L 53 54 L 54 56 L 56 57 L 54 58 L 53 60 L 52 58 L 50 57 Z" fill="#fde047"/>
+    <circle cx="100" cy="40" r="1.5" fill="#f0abfc"/>
+    <circle cx="20" cy="38" r="1.2" fill="#fde047"/>
+  </g>
+</svg>

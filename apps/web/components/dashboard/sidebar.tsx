@@ -5,6 +5,7 @@ import { BookMarked, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { NavKey } from "@/lib/types";
 import { PRIMARY_NAV, SECONDARY_NAV, type NavItem } from "./nav-config";
+import { GrimoireLogo } from "@/components/ui/grimoire-logo";
 
 type SidebarContentProps = {
   active: NavKey;
@@ -83,19 +84,13 @@ export function SidebarContent({
     <div className="flex h-full flex-col gap-2 p-4">
       {/* Brand */}
       <div className="flex items-center gap-3 px-2 py-3">
-        <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 shadow-[0_8px_24px_-6px_oklch(0.62_0.24_295_/_0.6)]">
-          <BookMarked className="h-5 w-5 text-white" strokeWidth={2.2} />
-          <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-60" />
-            <span className="relative inline-flex h-3 w-3 rounded-full bg-rose-500" />
-          </span>
-        </div>
+        <GrimoireLogo size={38} />
         <div className="flex flex-col leading-tight">
           <span className="font-display text-[15px] font-bold tracking-tight text-foreground">
             Grimoire
           </span>
-          <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            Manga · Anime
+          <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-violet-400">
+            Sanctuary
           </span>
         </div>
       </div>

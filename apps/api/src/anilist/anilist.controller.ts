@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, Param } from '@nestjs/common';
 import { AnilistService } from './anilist.service';
 
 @Controller('anilist')
@@ -47,5 +47,49 @@ export class AnilistController {
     @Get('genres')
     async getGenres() {
         return this.anilistService.getGenres();
+    }
+
+    // GET /anilist/top-100?page=&perPage=&country=&genre=
+    @Get('top-100')
+    async getTop100(
+        @Query('page') page?: string,
+        @Query('perPage') perPage?: string,
+        @Query('country') country?: string,
+        @Query('genre') genre?: string,
+    ) {
+        return this.anilistService.getTop100({
+            page: page ? parseInt(page, 10) : 1,
+            perPage: perPage ? parseInt(perPage, 10) : 50,
+            country,
+            genre,
+        });
+    }
+
+    // GET /anilist/manga/:id
+    @Get('manga/:id')
+    async getMangaById(@Param('id') id: string) {
+        return this.anilistService.getMangaById(parseInt(id, 10));
+    }
+
+    // GET /anilist/latest-updates?page=&perPage=&country=&genre=
+    @Get('latest-updates')
+    async getLatestUpdates(
+        @Query('page') page?: string,
+        @Query('perPage') perPage?: string,
+        @Query('country') country?: string,
+        @Query('genre') genre?: string,
+    ) {
+        return this.anilistService.getLatestUpdates({
+            page: page ? parseInt(page, 10) : 1,
+            perPage: perPage ? parseInt(perPage, 10) : 50,
+            country,
+            genre,
+        });
+    }
+
+    // GET /anilist/upcoming-seasonal
+    @Get('upcoming-seasonal')
+    async getUpcomingSeasonal() {
+        return this.anilistService.getUpcomingSeasonal();
     }
 }

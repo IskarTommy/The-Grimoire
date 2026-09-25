@@ -9,6 +9,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar";
+import { UserMenu } from "@/components/navigation/user-menu";
 
 type HeaderProps = {
   query: string;
@@ -85,22 +86,7 @@ export function Header({
 
           <div className="hidden h-8 w-px bg-white/10 sm:block" />
 
-          <div className="flex items-center gap-2.5 rounded-xl py-1 pl-1 pr-1 sm:pr-3 sm:hover:bg-white/5">
-            <Avatar className="h-9 w-9 border border-white/10 ring-2 ring-violet-400/30">
-              <AvatarImage src="" alt="User" />
-              <AvatarFallback className="bg-gradient-to-br from-violet-500 to-fuchsia-600 text-xs font-bold text-white">
-                NV
-              </AvatarFallback>
-            </Avatar>
-            <div className="hidden flex-col leading-tight sm:flex">
-              <span className="text-xs font-semibold text-foreground">
-                Nova Vey
-              </span>
-              <span className="flex items-center gap-1 text-[10px] text-amber-300">
-                <Flame className="h-3 w-3" /> Pro member
-              </span>
-            </div>
-          </div>
+          <UserMenu />
         </div>
       </div>
 

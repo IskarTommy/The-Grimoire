@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grimoire — Smiling Mascot (Transparent Cutout)</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #06070b;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      padding: 40px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 900px;
+      width: 100%;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(168, 85, 247, 0.15);
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      color: #d8b4fe;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #ffffff 40%, #c084fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p.subtitle {
+      color: #94a3b8;
+      font-size: 15px;
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+
+    .main-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      border-radius: 24px;
+      padding: 36px;
+      margin-bottom: 30px;
+      box-shadow: 0 0 50px rgba(168, 85, 247, 0.12);
+      backdrop-filter: blur(12px);
+    }
+
+    .checkerboard-stage {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      margin-bottom: 28px;
+      /* Checkerboard pattern to prove 100% transparent background */
+      background-color: #12101a;
+      background-image: 
+        linear-gradient(45deg, #181524 25%, transparent 25%), 
+        linear-gradient(-45deg, #181524 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #181524 75%), 
+        linear-gradient(-45deg, transparent 75%, #181524 75%);
+      background-size: 24px 24px;
+      background-position: 0 0, 0 12px, 12px -12px, -12px 0px;
+    }
+    .hero-img {
+      width: 170px;
+      height: 170px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.6));
+      transition: transform 0.3s ease;
+    }
+    .hero-img:hover {
+      transform: scale(1.08);
+    }
+
+    .stage-caption {
+      text-align: center;
+      font-size: 12px;
+      color: #a855f7;
+      margin-top: -16px;
+      margin-bottom: 24px;
+      font-weight: 600;
+    }
+
+    .scale-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 20px 16px;
+      background: rgba(255, 255, 255, 0.015);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      margin-bottom: 28px;
+    }
+    .scale-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .scale-item img {
+      object-fit: contain;
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+    }
+    .scale-label {
+      font-size: 11px;
+      color: #64748b;
+      font-family: monospace;
+    }
+
+    .mockup-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .mockup-item {
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .brand-sub {
+      font-size: 10px;
+      font-weight: 600;
+      color: #c084fc;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .status-alert {
+      background: rgba(168, 85, 247, 0.08);
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      border-radius: 14px;
+      padding: 18px 22px;
+      font-size: 13.5px;
+      color: #cbd5e1;
+      line-height: 1.6;
+    }
+    .status-alert strong {
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <span class="badge">Isolated Character Artwork</span>
+      <h1>The Authentic Smiling Mascot (Transparent)</h1>
+      <p class="subtitle">
+        Extracted directly from the original JPG you approved: the genuine smiling anime girl holding the Grimoire, with 100% transparent background (no background colors or circles).
+      </p>
+    </div>
+
+    <div class="main-card">
+      <!-- Checkerboard shows transparency clearly -->
+      <div class="checkerboard-stage">
+        <img src="/grimoire-mascot.png" alt="Grimoire Mascot" class="hero-img" />
+      </div>
+      <div class="stage-caption">▲ Rendered on checkerboard grid to confirm zero background colors</div>
+
+      <!-- Multiple scales -->
+      <div class="scale-row">
+        <div class="scale-item">
+          <img src="/grimoire-mascot.png" alt="96px" style="width: 96px; height: 96px;" />
+          <span class="scale-label">96px (Showcase)</span>
+        </div>
+        <div class="scale-item">
+          <img src="/grimoire-mascot.png" alt="44px" style="width: 44px; height: 44px;" />
+          <span class="scale-label">44px (Form)</span>
+        </div>
+        <div class="scale-item">
+          <img src="/grimoire-mascot.png" alt="36px" style="width: 36px; height: 36px;" />
+          <span class="scale-label">36px (Navbar)</span>
+        </div>
+        <div class="scale-item">
+          <img src="/grimoire-mascot.png" alt="28px" style="width: 28px; height: 28px;" />
+          <span class="scale-label">28px (Pill)</span>
+        </div>
+        <div class="scale-item">
+          <img src="/grimoire-mascot.png" alt="20px" style="width: 20px; height: 20px;" />
+          <span class="scale-label">20px (Tiny)</span>
+        </div>
+      </div>
+
+      <!-- Navbar Mockups -->
+      <div class="mockup-grid">
+        <div class="mockup-item">
+          <img src="/grimoire-mascot.png" alt="36px logo" style="width: 36px; height: 36px;" />
+          <div>
+            <div class="brand-title">Grimoire</div>
+            <div class="brand-sub">Reader Sanctuary</div>
+          </div>
+        </div>
+
+        <div class="mockup-item">
+          <img src="/grimoire-mascot.png" alt="28px logo" style="width: 28px; height: 28px;" />
+          <div>
+            <div class="brand-title">Library Collection</div>
+            <div class="brand-sub">Active Sync</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-alert">
+      <strong>Your Review:</strong><br />
+      This is the exact artwork from the generated JPG with the solid background fully removed.
+      Please check <strong><a href="http://localhost:3001/preview-logo.html" style="color: #c084fc; text-decoration: underline;">http://localhost:3001/preview-logo.html</a></strong> or let me know if this authentic transparent version is approved to deploy everywhere!
+    </div>
+  </div>
+</body>
+</html>
