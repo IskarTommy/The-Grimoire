@@ -5,7 +5,7 @@ import { BookMarked, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { NavKey } from "@/lib/types";
 import { PRIMARY_NAV, SECONDARY_NAV, type NavItem } from "./nav-config";
-import { GrimoireLogo } from "@/components/ui/grimoire-logo";
+import { GrimoireBrand } from "@/components/ui/grimoire-brand";
 
 type SidebarContentProps = {
   active: NavKey;
@@ -82,17 +82,13 @@ export function SidebarContent({
 }: SidebarContentProps) {
   return (
     <div className="flex h-full flex-col gap-2 p-4">
-      {/* Brand */}
-      <div className="flex items-center gap-3 px-2 py-3">
-        <GrimoireLogo size={38} />
-        <div className="flex flex-col leading-tight">
-          <span className="font-display text-[15px] font-bold tracking-tight text-foreground">
-            Grimoire
-          </span>
-          <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-violet-400">
-            Sanctuary
-          </span>
-        </div>
+      {/* Brand & Landing Page Link */}
+      <div className="px-2 py-3">
+        <GrimoireBrand
+          href="/"
+          size="md"
+          subscriptText="グリモワール • SANCTUARY"
+        />
       </div>
 
       {/* Primary nav */}

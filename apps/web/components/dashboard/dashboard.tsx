@@ -15,10 +15,11 @@ import { SettingsView } from "./settings-view";
 import { Footer } from "./footer";
 import { continueReading } from "@/lib/data";
 import type { NavKey, MediaItem } from "@/lib/types";
-import { useTrendingManga } from "@/hooks/use-anilist";
 import { useAuth } from "@/contexts/auth-context";
 import { useLibrary } from "@/hooks/use-library";
+import { useTrendingManga } from "@/hooks/use-anilist";
 import { GrimoireLogo } from "@/components/ui/grimoire-logo";
+import { GrimoireBrand } from "@/components/ui/grimoire-brand";
 import {
   BookOpen,
   LogIn,
@@ -29,6 +30,7 @@ import {
   Tv,
   ArrowRight,
   Bookmark,
+  Compass,
 } from "lucide-react";
 
 type ViewMeta = {
@@ -80,7 +82,7 @@ function filterForNav(nav: NavKey, items: MediaItem[]): MediaItem[] | null {
     case "planned":
       return items.filter((i) => i.status === "PLANNED");
     case "anime":
-      return items.filter((i) => i.type === "ANIME");
+      return items.filter((i) => i.hasAnime || i.type === "ANIME");
     default:
       return null;
   }
@@ -104,7 +106,7 @@ export function Dashboard() {
       ongoing: activeItems.filter((i) => i.status === "ONGOING").length,
       completed: activeItems.filter((i) => i.status === "COMPLETED").length,
       planned: activeItems.filter((i) => i.status === "PLANNED").length,
-      anime: activeItems.filter((i) => i.type === "ANIME").length,
+      anime: activeItems.filter((i) => i.hasAnime || i.type === "ANIME").length,
     }),
     [activeItems],
   );
@@ -125,12 +127,7 @@ export function Dashboard() {
       <div className="flex min-h-screen flex-col bg-[#0a0b12] text-foreground">
         {/* Navigation Bar */}
         <header className="flex h-16 items-center justify-between px-6 sm:px-12 border-b border-white/5 bg-background/80 backdrop-blur-md">
-          <Link href="/" className="flex items-center gap-2.5">
-            <GrimoireLogo size={32} />
-            <span className="font-display text-lg font-bold tracking-tight text-white">
-              Grimoire
-            </span>
-          </Link>
+          <GrimoireBrand href="/" size="sm" />
           <div className="flex items-center gap-2.5">
             <Link
               href="/login?redirect=/dashboard"
@@ -236,8 +233,8 @@ export function Dashboard() {
           />
 
           <main className="flex-1 space-y-8 px-4 py-6 sm:px-6 sm:py-8">
-            {/* If user is logged in but has no items in library */}
-            {activeItems.length === 0 ? (
+            {/* If user is logged in but has no items in library tabs */}
+            {(["library", "ongoing", "completed", "planned", "anime"].includes(nav)) && activeItems.length === 0 ? (
               <div className="flex min-h-[380px] flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-8 sm:p-12 text-center">
                 <div className="grid h-16 w-16 place-items-center rounded-2xl bg-violet-600/10 text-violet-400 border border-violet-500/20">
                   <Bookmark className="h-8 w-8" />
@@ -252,10 +249,17 @@ export function Dashboard() {
                 </div>
                 <div className="flex flex-wrap items-center justify-center gap-3 mt-3">
                   <Link
-                    href="/top-100"
+                    href="/#discover"
                     className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-violet-600/25 hover:brightness-110 transition-all cursor-pointer"
                   >
-                    <Trophy className="h-3.5 w-3.5" />
+                    <Compass className="h-3.5 w-3.5" />
+                    <span>Discover Manga</span>
+                  </Link>
+                  <Link
+                    href="/top-100"
+                    className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-semibold text-white hover:bg-white/10 transition-all cursor-pointer"
+                  >
+                    <Trophy className="h-3.5 w-3.5 text-amber-400" />
                     <span>Browse Top 100</span>
                   </Link>
                   <Link
@@ -288,6 +292,7 @@ export function Dashboard() {
                     query={query}
                     items={branchItems ?? []}
                     title="Ongoing Series"
+                    defaultStatusFilter="reading"
                   />
                 )}
 
@@ -296,6 +301,7 @@ export function Dashboard() {
                     query={query}
                     items={branchItems ?? []}
                     title="Completed"
+                    defaultStatusFilter="completed"
                   />
                 )}
 
@@ -304,6 +310,7 @@ export function Dashboard() {
                     query={query}
                     items={branchItems ?? []}
                     title="Plan to Read"
+                    defaultStatusFilter="plan_to_read"
                   />
                 )}
 
@@ -312,10 +319,11 @@ export function Dashboard() {
                     query={query}
                     items={branchItems ?? []}
                     title="Anime Watchlist"
+                    subtitle={`${(branchItems ?? []).length} adaptations in your collection`}
                   />
                 )}
 
-                {nav === "discover" && <DiscoverView items={trendingFallback} />}
+                {nav === "discover" && <DiscoverView query={query} />}
 
                 {nav === "stats" && <StatsView />}
 

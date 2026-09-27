@@ -10,6 +10,7 @@ import {
   AvatarImage,
 } from "@/components/ui/avatar";
 import { UserMenu } from "@/components/navigation/user-menu";
+import { GrimoireBrand } from "@/components/ui/grimoire-brand";
 
 type HeaderProps = {
   query: string;
@@ -29,15 +30,18 @@ export function Header({
   return (
     <header className="sticky top-0 z-30 px-4 pt-4 sm:px-6">
       <div className="glass-strong flex items-center gap-3 rounded-2xl px-3 py-2.5 sm:gap-4 sm:px-4">
-        {/* Mobile nav trigger */}
-        <button
-          type="button"
-          onClick={onOpenMobileNav}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-muted-foreground transition hover:bg-white/5 hover:text-foreground lg:hidden"
-          aria-label="Open navigation"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+        {/* Mobile nav trigger & Brand */}
+        <div className="flex items-center gap-2 lg:hidden">
+          <button
+            type="button"
+            onClick={onOpenMobileNav}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-muted-foreground transition hover:bg-white/5 hover:text-foreground"
+            aria-label="Open navigation"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <GrimoireBrand href="/" size="sm" showSubscript={false} />
+        </div>
 
         {/* Title block (hidden on small screens to save room for search) */}
         <div className="hidden min-w-0 flex-col leading-tight md:flex">

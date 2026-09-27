@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, Get, Patch, Param } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, Patch, Delete, Param } from '@nestjs/common';
 import { LibraryService } from './library.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AddMangaDto } from './dto/add-manga.dto';
@@ -24,6 +24,7 @@ export class LibraryController {
             body.mangaId,
             body.title,
             body.coverUrl,
+            body.status,
         );
     }
 
@@ -43,7 +44,16 @@ export class LibraryController {
             req.user.userId,
             mangaId,
             body.currentChapter,
-            body.status
+            body.status,
+            body.rating,
         );
+    }
+
+    @Delete(':mangaId')
+    async removeFromLibrary(
+        @Param('mangaId') mangaId: string,
+        @Request() req: any,
+    ) {
+        return this.libraryService.removeFromLibrary(req.user.userId, mangaId);
     }
 }

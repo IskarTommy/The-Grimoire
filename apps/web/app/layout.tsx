@@ -51,6 +51,7 @@ export const metadata: Metadata = {
 };
 
 import { AuthProvider } from "@/contexts/auth-context";
+import { LibraryProvider } from "@/contexts/library-context";
 
 export default function RootLayout({
   children,
@@ -63,8 +64,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} font-sans antialiased`}
       >
         <AuthProvider>
-          {children}
-          <Toaster />
+          <LibraryProvider>
+            {children}
+            <Toaster />
+          </LibraryProvider>
         </AuthProvider>
       </body>
     </html>

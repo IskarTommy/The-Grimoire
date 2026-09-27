@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef, useTransition } from "react";
 import Link from "next/link";
-import { Search, X, Loader2, BookOpen, ChevronRight, Sparkles, Filter } from "lucide-react";
+import { Search, X, Loader2, BookOpen, ChevronRight, Sparkles, Filter, Bookmark } from "lucide-react";
 import { searchMangaApi, fetchGenresApi, SearchParams } from "@/hooks/use-anilist";
+import { useLibrary } from "@/hooks/use-library";
 import type { MediaItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +29,7 @@ const SORT_OPTIONS = [
 
 export function SearchModal({ isOpen, onClose, initialItems = [] }: SearchModalProps) {
   const [query, setQuery] = useState("");
+  const { isInLibrary } = useLibrary();
   const [selectedOrigin, setSelectedOrigin] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("");
   const [selectedSort, setSelectedSort] = useState("POPULARITY_DESC");
@@ -259,7 +261,10 @@ export function SearchModal({ isOpen, onClose, initialItems = [] }: SearchModalP
                       <img
                         src={item.cover}
                         alt={item.title}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        className={cn(
+                          "h-full w-full object-cover transition-all duration-300 group-hover:scale-105",
+                          isInLibrary(item.id) && "opacity-55 saturate-50 contrast-90 group-hover:opacity-95 group-hover:saturate-100"
+                        )}
                       />
                       <div className="absolute bottom-1 right-1 rounded bg-black/80 px-1 py-0.2 text-[9px]">
                         {item.origin === "KR" ? "🇰🇷" : item.origin === "CN" ? "🇨🇳" : "🇯🇵"}
@@ -275,6 +280,12 @@ export function SearchModal({ isOpen, onClose, initialItems = [] }: SearchModalP
                         {item.hasAnime && (
                           <span className="shrink-0 rounded bg-fuchsia-500/20 border border-fuchsia-500/30 px-1.5 py-0.2 text-[10px] font-semibold text-fuchsia-300">
                             Anime
+                          </span>
+                        )}
+                        {isInLibrary(item.id) && (
+                          <span className="flex items-center gap-1 shrink-0 rounded bg-emerald-500/20 border border-emerald-500/30 px-1.5 py-0.2 text-[10px] font-semibold text-emerald-300">
+                            <Bookmark className="h-2.5 w-2.5 fill-emerald-400" />
+                            In Library
                           </span>
                         )}
                       </div>

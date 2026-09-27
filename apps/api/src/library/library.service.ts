@@ -10,6 +10,7 @@ export class LibraryService {
         mangaId: string, // This is the UUID from MangaDex
         title: string,
         coverUrl?: string, // The cover is optinal
+        status?: string,
     ) {
         // 1. We check if the user already has this in thier library.
         const existingEntry = await
@@ -20,17 +21,34 @@ export class LibraryService {
                         mangaId: mangaId,
                     },
                 },
+                include: {
+                    manga: true,
+                },
             });
 
         if (existingEntry) {
-            throw new ConflictException('Manga is already in your library!');
+            if (status && status !== existingEntry.status) {
+                return this.prisma.libraryEntry.update({
+                    where: {
+                        userId_mangaId: {
+                            userId: userId,
+                            mangaId: mangaId,
+                        },
+                    },
+                    data: { status },
+                    include: { manga: true },
+                });
+            }
+            return existingEntry;
         }
 
         // 2. This ensures the Manga exists in the Database before linking it
-        // Update or Insert
         await this.prisma.manga.upsert({
             where: { id: mangaId },
-            update: {}, // If something exists, do nothing
+            update: {
+                ...(title && { title }),
+                ...(coverUrl && { coverUrl }),
+            },
             create: {
                 id: mangaId,
                 title: title,
@@ -39,14 +57,16 @@ export class LibraryService {
             },
         });
 
-        // 3. Create the actual library entry
+        // 3. Create the actual library entry with manga included!
         return this.prisma.libraryEntry.create({
             data: {
                 userId: userId,
                 mangaId: mangaId,
-                status: 'reading', // Default status
+                status: status || 'reading', // Default status or chosen status
                 currentChapter: 0,
-
+            },
+            include: {
+                manga: true,
             },
         });
 
@@ -62,8 +82,14 @@ export class LibraryService {
         });
     }
 
-    // Update chapter progress or status
-    async updateProgress(userId: string, mangaId: string, currentChapter: number, status?: string) {
+    // Update chapter progress, status, or rating
+    async updateProgress(
+        userId: string,
+        mangaId: string,
+        currentChapter?: number,
+        status?: string,
+        rating?: number,
+    ) {
         return this.prisma.libraryEntry.update({
             where: {
                 userId_mangaId: {
@@ -72,9 +98,24 @@ export class LibraryService {
                 },
             },
             data: {
-                currentChapter: currentChapter,
-                ...(status && { status: status }), // Only update status if the user provided one
+                ...(currentChapter !== undefined && { currentChapter: currentChapter }),
+                ...(status !== undefined && { status: status }),
+                ...(rating !== undefined && { rating: rating }),
+            },
+            include: {
+                manga: true,
+            },
+        });
+    }
 
+    // Remove manga from the user's library
+    async removeFromLibrary(userId: string, mangaId: string) {
+        return this.prisma.libraryEntry.delete({
+            where: {
+                userId_mangaId: {
+                    userId: userId,
+                    mangaId: mangaId,
+                },
             },
         });
     }

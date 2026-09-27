@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { GrimoireLogo } from "@/components/ui/grimoire-logo";
+import { GrimoireBrand } from "@/components/ui/grimoire-brand";
 import { cn } from "@/lib/utils";
 
 function getPasswordStrength(pass: string): { score: number; label: string; color: string } {
@@ -108,16 +109,12 @@ function SignupForm() {
 
       {/* Brand Header */}
       <div className="mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <GrimoireLogo size={44} />
-          <div>
-            <span className="font-display text-xl font-bold tracking-tight text-white block">
-              Grimoire
-            </span>
-            <span className="text-[11px] font-semibold text-fuchsia-400 tracking-wider uppercase">
-              Begin Your Journey
-            </span>
-          </div>
+        <div className="mb-6">
+          <GrimoireBrand
+            href="/"
+            size="md"
+            subscriptText="グリモワール • BEGIN JOURNEY"
+          />
         </div>
 
         <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-white">

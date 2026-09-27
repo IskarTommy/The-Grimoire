@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grimoire — Brand Name Logo Concepts & Mascot Lockups</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Outfit:wght@600;700;800;900&family=Uncial+Antiqua&family=Noto+Sans+JP:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #07080f;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 48px 24px 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Background magic atmosphere */
+    .bg-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(139, 92, 246, 0.22), transparent 70%),
+        radial-gradient(ellipse 60% 40% at 90% 80%, rgba(217, 70, 239, 0.15), transparent 60%),
+        radial-gradient(ellipse 50% 50% at 10% 60%, rgba(56, 189, 248, 0.12), transparent 60%);
+      z-index: -1;
+    }
+
+    .container {
+      max-width: 1040px;
+      width: 100%;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 16px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(168, 85, 247, 0.14);
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      color: #d8b4fe;
+      margin-bottom: 14px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    h1 {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #ffffff 40%, #c084fc 80%, #f472b6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p.subtitle {
+      color: #94a3b8;
+      font-size: 15px;
+      max-width: 680px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* Art Showcase Image */
+    .sheet-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 48px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      backdrop-blur: 16px;
+    }
+    .sheet-card h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .sheet-img-wrap {
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      position: relative;
+    }
+    .sheet-img-wrap img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* Live Interactive Concepts Grid */
+    .concepts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+    @media (max-width: 640px) {
+      .concepts-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .concept-card {
+      background: rgba(18, 20, 32, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .concept-card:hover {
+      border-color: rgba(168, 85, 247, 0.4);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(139, 92, 246, 0.15);
+    }
+
+    .concept-tag {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .concept-tag .badge-pill {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 6px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    /* Lockup Preview Stage */
+    .preview-stage {
+      background: #0d0f1a;
+      border-radius: 14px;
+      border: 1px dashed rgba(255, 255, 255, 0.12);
+      padding: 28px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      min-height: 120px;
+      position: relative;
+    }
+
+    .mascot-img {
+      height: 48px;
+      width: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.3));
+      transition: transform 0.3s ease;
+    }
+    .concept-card:hover .mascot-img {
+      transform: scale(1.06) rotate(-2deg);
+    }
+
+    /* Concept Styles */
+
+    /* 1. Arcane Fantasy Serif */
+    .style-arcane {
+      font-family: 'Cinzel', serif;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+    .style-arcane .wordmark {
+      font-size: 28px;
+      background: linear-gradient(135deg, #ffffff 10%, #e9d5ff 55%, #c084fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 25px rgba(192, 132, 252, 0.4);
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .style-arcane .star-glyph {
+      color: #e879f9;
+      font-size: 14px;
+      filter: drop-shadow(0 0 8px #d946ef);
+      margin-left: -2px;
+    }
+    .style-arcane .subtext {
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      color: #c084fc;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* 2. Modern Anime Title (Katakana Hybrid) */
+    .style-anime {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 900;
+      letter-spacing: -0.01em;
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+    .style-anime .wordmark {
+      font-size: 30px;
+      background: linear-gradient(135deg, #ffffff 20%, #a855f7 65%, #ec4899 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 2px 12px rgba(168, 85, 247, 0.5));
+      text-transform: uppercase;
+      font-style: italic;
+    }
+    .style-anime .kana {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.28em;
+      color: #38bdf8;
+      margin-top: 3px;
+      text-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+    }
+
+    /* 3. Mystic Golden Spellbook */
+    .style-mystic {
+      font-family: 'Cinzel', serif;
+      font-weight: 800;
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+    .style-mystic .wordmark {
+      font-size: 28px;
+      background: linear-gradient(135deg, #fffbeb 10%, #fde047 50%, #ca8a04 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 16px rgba(250, 204, 21, 0.4));
+      letter-spacing: 0.05em;
+    }
+    .style-mystic .subtext {
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.28em;
+      color: #facc15;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* 4. Cute Vibrant Magic Starlight */
+    .style-cute {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 900;
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+    .style-cute .wordmark {
+      font-size: 28px;
+      background: linear-gradient(135deg, #ffffff 15%, #f472b6 60%, #c084fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 16px rgba(244, 114, 182, 0.5));
+      letter-spacing: -0.01em;
+    }
+    .style-cute .subtext {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      color: #f472b6;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    /* Interactive Simulation: Sidebar & Header scale */
+    .simulation-box {
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .sim-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #64748b;
+    }
+    .sim-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .sim-button:hover {
+      background: rgba(168, 85, 247, 0.12);
+      border-color: rgba(168, 85, 247, 0.35);
+      color: #fff;
+    }
+
+    .cta-row {
+      text-align: center;
+      margin-top: 20px;
+      padding: 24px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-canvas"></div>
+
+  <div class="container">
+    <div class="header">
+      <div class="badge">Brand Identity & Navigation Update</div>
+      <h1>Grimoire Wordmark & Logo Concepts</h1>
+      <p class="subtitle">
+        Review the stylized design concepts for the name <strong>"Grimoire"</strong> paired with our official transparent smiling mascot. Once approved, the logo and name will act as an active link returning to the Landing Page (<code style="color:#d8b4fe">/</code>) from anywhere in the Library.
+      </p>
+    </div>
+
+    <!-- Official High-Res Concept Art Sheet -->
+    <div class="sheet-card">
+      <h2>
+        <span>Artwork Concept Design Sheet</span>
+        <span style="font-size: 12px; font-weight: 500; color: #94a3b8;">High-Resolution Render</span>
+      </h2>
+      <div class="sheet-img-wrap">
+        <img src="/brand-concepts.jpg" alt="Grimoire Logo Title Design Concepts" />
+      </div>
+    </div>
+
+    <!-- Live Interactive Implementations -->
+    <div class="header" style="margin-bottom: 24px;">
+      <h2 style="font-size: 22px; font-weight: 800; color: #e2e8f0;">Live Interactive Implementations (Mascot Lockup)</h2>
+      <p class="subtitle" style="font-size: 13px;">Hover over each lockup to see the responsive link interaction and glow effect</p>
+    </div>
+
+    <div class="concepts-grid">
+
+      <!-- Concept A -->
+      <div class="concept-card">
+        <div class="concept-tag">
+          <span class="badge-pill" style="background: rgba(192, 132, 252, 0.15); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.3);">
+            Option A — Arcane Fantasy Serif
+          </span>
+          <span style="font-size: 12px; color: #64748b;">Dark Fantasy Elegance</span>
+        </div>
+
+        <div class="preview-stage">
+          <img src="/grimoire-mascot.png" alt="Grimoire Mascot" class="mascot-img" />
+          <div class="style-arcane">
+            <div class="wordmark">
+              Grimo<span class="star-glyph">✦</span>ire
+            </div>
+            <div class="subtext">Arcane Sanctuary</div>
+          </div>
+        </div>
+
+        <div class="simulation-box">
+          <div class="sim-row">
+            <span>Navigation Link Simulation (Sidebar scale):</span>
+          </div>
+          <a href="/" class="sim-button">
+            <img src="/grimoire-mascot.png" alt="Grimoire Mascot" style="height: 32px;" />
+            <div class="style-arcane" style="font-size: 18px;">
+              <span class="wordmark" style="font-size: 18px;">Grimo<span class="star-glyph" style="font-size: 10px;">✦</span>ire</span>
+              <span class="subtext" style="font-size: 7px;">Sanctuary</span>
+            </div>
+            <span style="margin-left: auto; font-size: 11px; color: #a855f7;">Return to Landing ➔</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Concept B -->
+      <div class="concept-card">
+        <div class="concept-tag">
+          <span class="badge-pill" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
+            Option B — Modern Anime (Katakana Hybrid)
+          </span>
+          <span style="font-size: 12px; color: #64748b;">Light Novel / Manga Title</span>
+        </div>
+
+        <div class="preview-stage">
+          <img src="/grimoire-mascot.png" alt="Grimoire Mascot" class="mascot-img" />
+          <div class="style-anime">
+            <div class="wordmark">Grimoire</div>
+            <div class="kana">グリモワール • ARCHIVE</div>
+          </div>
+        </div>
+
+        <div class="simulation-box">
+          <div class="sim-row">
+            <span>Navigation Link Simulation (Sidebar scale):</span>
+          </div>
+          <a href="/" class="sim-button">
+            <img src="/grimoire-mascot.png" alt="Grimoire Mascot" style="height: 32px;" />
+            <div class="style-anime">
+              <span class="wordmark" style="font-size: 18px;">Grimoire</span>
+              <span class="kana" style="font-size: 7px;">グリモワール</span>
+            </div>
+            <span style="margin-left: auto; font-size: 11px; color: #38bdf8;">Return to Landing ➔</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Concept C -->
+      <div class="concept-card">
+        <div class="concept-tag">
+          <span class="badge-pill" style="background: rgba(250, 204, 21, 0.15); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.3);">
+            Option C — Mystic Golden Crest
+          </span>
+          <span style="font-size: 12px; color: #64748b;">Spellbook Seal & Gold Lettering</span>
+        </div>
+
+        <div class="preview-stage">
+          <img src="/grimoire-mascot.png" alt="Grimoire Mascot" class="mascot-img" />
+          <div class="style-mystic">
+            <div class="wordmark">GRIMOIRE</div>
+            <div class="subtext">✦ Mystical Archive ✦</div>
+          </div>
+        </div>
+
+        <div class="simulation-box">
+          <div class="sim-row">
+            <span>Navigation Link Simulation (Sidebar scale):</span>
+          </div>
+          <a href="/" class="sim-button">
+            <img src="/grimoire-mascot.png" alt="Grimoire Mascot" style="height: 32px;" />
+            <div class="style-mystic">
+              <span class="wordmark" style="font-size: 17px;">GRIMOIRE</span>
+              <span class="subtext" style="font-size: 7px;">Archive</span>
+            </div>
+            <span style="margin-left: auto; font-size: 11px; color: #facc15;">Return to Landing ➔</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Concept D -->
+      <div class="concept-card">
+        <div class="concept-tag">
+          <span class="badge-pill" style="background: rgba(244, 114, 182, 0.15); color: #f472b6; border: 1px solid rgba(244, 114, 182, 0.3);">
+            Option D — Cute Vibrant Starlight
+          </span>
+          <span style="font-size: 12px; color: #64748b;">Harmonious with Mascot</span>
+        </div>
+
+        <div class="preview-stage">
+          <img src="/grimoire-mascot.png" alt="Grimoire Mascot" class="mascot-img" />
+          <div class="style-cute">
+            <div class="wordmark">Grimoire</div>
+            <div class="subtext"><span>✧</span> Magical Reader <span>✦</span></div>
+          </div>
+        </div>
+
+        <div class="simulation-box">
+          <div class="sim-row">
+            <span>Navigation Link Simulation (Sidebar scale):</span>
+          </div>
+          <a href="/" class="sim-button">
+            <img src="/grimoire-mascot.png" alt="Grimoire Mascot" style="height: 32px;" />
+            <div class="style-cute">
+              <span class="wordmark" style="font-size: 18px;">Grimoire</span>
+              <span class="subtext" style="font-size: 8px;">✧ Reader ✦</span>
+            </div>
+            <span style="margin-left: auto; font-size: 11px; color: #f472b6;">Return to Landing ➔</span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Instructions / Next Actions -->
+    <div class="cta-row">
+      <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">Ready to Pick Your Favorite?</h3>
+      <p style="font-size: 14px; color: #94a3b8; max-width: 600px; margin: 0 auto 16px;">
+        Let us know which concept you like best (or if you want to blend elements, e.g. Option B's katakana with Option A's typography), and we will immediately apply it across the app and turn it into the active landing page return link!
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <a href="/" style="padding: 10px 20px; border-radius: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #fff; font-size: 13px; font-weight: 600; text-decoration: none;">View Landing Page</a>
+        <a href="/dashboard" style="padding: 10px 20px; border-radius: 12px; background: linear-gradient(135deg, #8b5cf6, #d946ef); color: #fff; font-size: 13px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);">Go to Library / Dashboard</a>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

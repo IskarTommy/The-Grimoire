@@ -1,10 +1,33 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { useTrendingManga, useSeasonalManga, usePopularNewManga, useLatestUpdatesManga } from "@/hooks/use-anilist";
+import {
+  useTrendingManga,
+  useSeasonalManga,
+  usePopularNewManga,
+  useLatestUpdatesManga,
+  searchMangaApi,
+} from "@/hooks/use-anilist";
 import { MangaGrid } from "@/components/dashboard/manga-grid";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Tv, Search, User, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  BookOpen,
+  Tv,
+  Search,
+  User,
+  ChevronLeft,
+  ChevronRight,
+  Bookmark,
+  Flame,
+  Clock,
+  Filter,
+  Compass,
+  X,
+  Sparkles,
+  Loader2,
+  Star,
+  Trophy,
+} from "lucide-react";
 import Link from "next/link";
 import {
   Carousel,
@@ -18,59 +41,37 @@ import { cn } from "@/lib/utils";
 import { SearchModal } from "@/components/search/search-modal";
 import { UserMenu } from "@/components/navigation/user-menu";
 import { GrimoireLogo } from "@/components/ui/grimoire-logo";
+import { GrimoireBrand } from "@/components/ui/grimoire-brand";
+import { useLibrary } from "@/hooks/use-library";
+
+const ORIGINS = [
+  { label: "All Origins", value: "" },
+  { label: "🇯🇵 Manga", value: "JP" },
+  { label: "🇰🇷 Manhwa", value: "KR" },
+  { label: "🇨🇳 Manhua", value: "CN" },
+];
+
+const POPULAR_GENRES = [
+  "Action",
+  "Adventure",
+  "Comedy",
+  "Drama",
+  "Fantasy",
+  "Mystery",
+  "Psychological",
+  "Romance",
+  "Sci-Fi",
+  "Slice of Life",
+  "Supernatural",
+  "Thriller",
+];
 
 function cleanSynopsis(synopsis?: string) {
   if (!synopsis) return "";
   return synopsis.replace(/<[^>]*>?/gm, "").trim();
 }
 
-function PopularMangaList({ items }: { items: MediaItem[] }) {
-  return (
-    <div className="flex flex-col gap-3">
-      {items.map((item, i) => (
-        <Link
-          key={item.id}
-          href={`/manga/${item.id}`}
-          className="group flex items-center gap-3.5 rounded-xl p-2 transition-all duration-200 hover:bg-white/[0.04]"
-        >
-          <div className="relative h-19 w-14 sm:h-20 sm:w-15 shrink-0 overflow-hidden rounded-xl border border-white/10 shadow-md">
-            <img
-              src={item.cover}
-              alt={item.title}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-            <div className="absolute top-0 left-0 rounded-br-lg bg-black/80 px-1.5 py-0.5 text-[10px] font-bold text-amber-300 backdrop-blur-sm">
-              #{i + 1}
-            </div>
-          </div>
-          <div className="flex min-w-0 flex-1 flex-col py-0.5 justify-center">
-            <h4 className="truncate text-sm font-semibold text-foreground transition-colors group-hover:text-violet-300">
-              {item.title}
-            </h4>
-            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1 text-[11px]">
-                <BookOpen className="h-3 w-3" /> {item.status}
-              </span>
-              <span className="text-[11px] font-semibold text-amber-400">
-                ★ {item.rating.toFixed(1)}
-              </span>
-            </div>
-            <div className="mt-1.5 flex gap-1.5 truncate">
-              {item.genres.slice(0, 2).map((g) => (
-                <span
-                  key={g}
-                  className="rounded-md border border-white/[0.06] bg-white/[0.03] px-1.5 py-0.5 text-[10px] text-white/60"
-                >
-                  {g}
-                </span>
-              ))}
-            </div>
-          </div>
-        </Link>
-      ))}
-    </div>
-  );
-}
+
 
 export default function LandingPage() {
   const { media, loading } = useTrendingManga();
@@ -108,21 +109,106 @@ export default function LandingPage() {
   const heroSource = popularNew.length > 0 ? popularNew : media;
   const itemsWithBanner = heroSource.filter((m) => m.bannerImage);
   const heroItems = (itemsWithBanner.length >= 4 ? itemsWithBanner : heroSource).slice(0, 6);
-  const latestUpdates = latestUpdatesList.slice(0, 10);
-  // 6 items so popular sidebar exactly matches the height of 2 rows of latest updates
-  const popularSidebar = [...media].sort((a, b) => b.rating - a.rating).slice(0, 6);
-
   const heroLoading = popularNewLoading && heroSource.length === 0;
+
+  // Dynamic Live Discovery state querying the full AniList catalogue
+  type DiscoverSort = "TRENDING_DESC" | "POPULARITY_DESC" | "SCORE_DESC" | "UPDATED_AT_DESC";
+  const [discoverSort, setDiscoverSort] = useState<DiscoverSort>("TRENDING_DESC");
+  const [discoverOrigin, setDiscoverOrigin] = useState("");
+  const [discoverGenre, setDiscoverGenre] = useState("");
+  const [discoverSearch, setDiscoverSearch] = useState("");
+  const [discoverResults, setDiscoverResults] = useState<MediaItem[]>([]);
+  const [discoverLoading, setDiscoverLoading] = useState(true);
+  const [discoverLoadingMore, setDiscoverLoadingMore] = useState(false);
+  const [discoverPage, setDiscoverPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+
+  // Live query AniList API whenever search, genre, origin, or sort changes
+  useEffect(() => {
+    let isCancelled = false;
+    setDiscoverLoading(true);
+    setDiscoverPage(1);
+
+    const timer = setTimeout(async () => {
+      try {
+        const data = await searchMangaApi({
+          q: discoverSearch.trim() || undefined,
+          genre: discoverGenre || undefined,
+          country: discoverOrigin || undefined,
+          sort: discoverSort,
+          page: 1,
+          perPage: 24,
+        });
+
+        if (!isCancelled) {
+          setDiscoverResults(data);
+          setHasMore(data.length >= 24);
+        }
+      } catch (err) {
+        console.error("Discovery query failed:", err);
+        if (!isCancelled) setDiscoverResults([]);
+      } finally {
+        if (!isCancelled) setDiscoverLoading(false);
+      }
+    }, discoverSearch ? 350 : 0);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
+  }, [discoverSearch, discoverGenre, discoverOrigin, discoverSort]);
+
+  const handleLoadMore = async () => {
+    if (discoverLoadingMore || !hasMore) return;
+    setDiscoverLoadingMore(true);
+    const nextPage = discoverPage + 1;
+    try {
+      const data = await searchMangaApi({
+        q: discoverSearch.trim() || undefined,
+        genre: discoverGenre || undefined,
+        country: discoverOrigin || undefined,
+        sort: discoverSort,
+        page: nextPage,
+        perPage: 24,
+      });
+
+      if (data.length > 0) {
+        setDiscoverResults((prev) => [...prev, ...data]);
+        setDiscoverPage(nextPage);
+        setHasMore(data.length >= 24);
+      } else {
+        setHasMore(false);
+      }
+    } catch (err) {
+      console.error("Failed to load more discovery titles:", err);
+    } finally {
+      setDiscoverLoadingMore(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
       {/* Public Header with Grimoire Branding + Search (Ctrl K) + Profile Avatar */}
-      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between px-6 sm:px-12 lg:px-20 backdrop-blur-md border-b border-white/5 bg-background/70">
-        <div className="flex items-center gap-2.5">
-          <GrimoireLogo size={32} />
-          <span className="font-display text-lg font-bold tracking-tight text-foreground">
-            Grimoire
-          </span>
+      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between px-6 sm:px-12 lg:px-20 backdrop-blur-md border-b border-white/5 bg-background/80">
+        <div className="flex items-center gap-6">
+          <GrimoireBrand href="/" size="sm" />
+          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-white/70">
+            <Link href="/" className="text-violet-400 font-bold">
+              Home
+            </Link>
+            <Link href="/top-100" className="hover:text-violet-400 transition-colors">
+              Top 100
+            </Link>
+            <Link href="/seasonal" className="hover:text-violet-400 transition-colors">
+              Seasonal
+            </Link>
+            <Link href="/latest-updates" className="hover:text-violet-400 transition-colors">
+              Latest Updates
+            </Link>
+            <Link href="/dashboard" className="hover:text-violet-400 transition-colors">
+              My Library
+            </Link>
+          </nav>
         </div>
 
         {/* Search Bar + Profile from Screenshot 2 */}
@@ -266,49 +352,212 @@ export default function LandingPage() {
           )}
         </div>
 
-        {/* Dual Column Layout */}
-        <div className="mt-10 px-6 sm:px-12 lg:px-20 relative z-10">
-          <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
-            
-            {/* Main Column: Latest Updates */}
-            <section className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-6">
-                 <h2 className="text-2xl font-bold font-display text-white">Latest Updates</h2>
-                 <Link
-                   href="/latest-updates"
-                   className="text-sm font-semibold text-violet-400 hover:text-violet-300 flex items-center gap-1 cursor-pointer"
-                 >
-                   View all <ChevronRight className="h-4 w-4" />
-                 </Link>
+        {/* ======================================================== */}
+        {/* REBUILT DISCOVERY & BROWSE BY GENRE HUB */}
+        {/* ======================================================== */}
+        <section id="discover" className="mt-12 px-6 sm:px-12 lg:px-20 relative z-10 scroll-mt-24 space-y-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-5">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-md shadow-violet-600/30">
+                  <Compass className="h-3.5 w-3.5" />
+                </span>
+                <span className="text-xs font-bold uppercase tracking-wider text-violet-300">
+                  Catalogue Explorer
+                </span>
               </div>
-              {latestUpdatesLoading ? (
-                <div className="h-[500px] bg-white/5 rounded-2xl animate-pulse" />
-              ) : (
-                <MangaGrid items={latestUpdates} />
-              )}
-            </section>
+              <h2 className="mt-1 font-display text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                Discover Manga & Browse by Genre
+              </h2>
+              <p className="mt-1 text-xs sm:text-sm text-white/60">
+                Explore thousands of curated titles, filter by country of origin, or select your favorite genre.
+              </p>
+            </div>
 
-            {/* Right Sidebar: Popular Manga */}
-            <aside className="w-full lg:w-[320px] shrink-0">
-              <div className="flex items-center justify-between mb-6">
-                 <h2 className="text-xl font-bold font-display text-white">Most Popular</h2>
-              </div>
-              {loading ? (
-                <div className="h-[500px] bg-white/5 rounded-2xl animate-pulse" />
-              ) : (
-                <>
-                  <PopularMangaList items={popularSidebar} />
-                  <Link href="/top-100">
-                    <Button variant="outline" className="w-full mt-4 border-white/10 bg-white/[0.02] text-white hover:bg-white/10 hover:border-violet-500/30 transition-all cursor-pointer">
-                      View Top 100
-                    </Button>
-                  </Link>
-                </>
+            {/* In-Page Quick Search */}
+            <div className="relative w-full md:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/40" />
+              <input
+                type="text"
+                value={discoverSearch}
+                onChange={(e) => setDiscoverSearch(e.target.value)}
+                placeholder="Filter by title or genre..."
+                className="w-full rounded-xl border border-white/10 bg-white/5 pl-9 pr-8 py-2 text-xs text-white placeholder:text-white/40 focus:border-violet-500/50 focus:bg-white/[0.08] focus:outline-none transition-all"
+              />
+              {discoverSearch && (
+                <button
+                  onClick={() => setDiscoverSearch("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-white/40 hover:text-white"
+                  title="Clear search"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
               )}
-            </aside>
-            
+            </div>
           </div>
-        </div>
+
+          {/* Controls: Feeds + Origins */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            {/* Feeds Switcher */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+              {[
+                { id: "TRENDING_DESC", label: "Trending Now", icon: Flame },
+                { id: "POPULARITY_DESC", label: "Most Popular", icon: Star },
+                { id: "SCORE_DESC", label: "Top Rated", icon: Trophy },
+                { id: "UPDATED_AT_DESC", label: "Latest Drops", icon: Clock },
+              ].map((feed) => {
+                const Icon = feed.icon;
+                const isActive = discoverSort === feed.id;
+                return (
+                  <button
+                    key={feed.id}
+                    onClick={() => setDiscoverSort(feed.id as DiscoverSort)}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all shrink-0 cursor-pointer",
+                      isActive
+                        ? "bg-violet-600 text-white shadow-md shadow-violet-600/30"
+                        : "text-white/60 hover:text-white hover:bg-white/5"
+                    )}
+                  >
+                    <Icon className={cn("h-3.5 w-3.5", isActive ? "text-white" : "text-white/50")} />
+                    <span>{feed.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Origin Pills */}
+            <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+              {ORIGINS.map((origin) => {
+                const isActive = discoverOrigin === origin.value;
+                return (
+                  <button
+                    key={origin.value}
+                    onClick={() => setDiscoverOrigin(isActive ? "" : origin.value)}
+                    className={cn(
+                      "rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer",
+                      isActive
+                        ? "bg-white/20 text-white border border-white/30"
+                        : "text-white/50 hover:text-white hover:bg-white/5"
+                    )}
+                  >
+                    {origin.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Browse by Genre Chips */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none">
+            <span className="flex items-center gap-1 text-[11px] font-semibold text-white/40 uppercase tracking-wider mr-1 shrink-0">
+              <Filter className="h-3 w-3" /> Genres:
+            </span>
+            <button
+              onClick={() => setDiscoverGenre("")}
+              className={cn(
+                "rounded-lg px-2.5 py-1 text-[11px] font-medium transition-all shrink-0 cursor-pointer",
+                !discoverGenre
+                  ? "bg-fuchsia-600 text-white shadow-sm"
+                  : "border border-white/5 bg-white/[0.02] text-white/60 hover:text-white"
+              )}
+            >
+              All Genres
+            </button>
+            {POPULAR_GENRES.map((g) => {
+              const isSelected = discoverGenre === g;
+              return (
+                <button
+                  key={g}
+                  onClick={() => setDiscoverGenre(isSelected ? "" : g)}
+                  className={cn(
+                    "rounded-lg px-2.5 py-1 text-[11px] font-medium transition-all shrink-0 cursor-pointer",
+                    isSelected
+                      ? "bg-fuchsia-600 text-white shadow-sm"
+                      : "border border-white/5 bg-white/[0.02] text-white/60 hover:text-white hover:bg-white/5"
+                  )}
+                >
+                  {g}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Manga Grid Results */}
+          {discoverLoading ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+              {Array.from({ length: 15 }).map((_, i) => (
+                <div key={i} className="aspect-[3/4.3] rounded-2xl bg-white/5 animate-pulse" />
+              ))}
+            </div>
+          ) : discoverResults.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center rounded-2xl border border-white/5 bg-white/[0.02]">
+              <Compass className="h-10 w-10 text-white/30 mb-3" />
+              <h3 className="text-base font-bold text-white">No manga found</h3>
+              <p className="mt-1 text-xs text-white/50 max-w-sm">
+                No titles matched your current genre, origin, or search filter in the global AniList catalogue.
+              </p>
+              {(discoverGenre || discoverOrigin || discoverSearch) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDiscoverGenre("");
+                    setDiscoverOrigin("");
+                    setDiscoverSearch("");
+                  }}
+                  className="mt-4 rounded-xl border border-violet-500/30 bg-violet-600/20 px-4 py-1.5 text-xs font-semibold text-violet-300 hover:bg-violet-600/30 transition-colors cursor-pointer"
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
+              <MangaGrid items={discoverResults} />
+
+              {/* Discovery Footer: Counts, Load More from Global Catalogue */}
+              <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-white/10 pt-6">
+                <span className="text-xs text-white/50">
+                  Showing {discoverResults.length} titles from global catalogue
+                </span>
+                <div className="flex flex-wrap items-center gap-3">
+                  {hasMore && (
+                    <Button
+                      onClick={handleLoadMore}
+                      disabled={discoverLoadingMore}
+                      variant="outline"
+                      className="rounded-xl border-violet-500/30 bg-violet-600/10 text-violet-200 hover:bg-violet-600 hover:text-white px-5 py-2 text-xs font-semibold transition-all cursor-pointer shadow-sm flex items-center gap-2"
+                    >
+                      {discoverLoadingMore ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <span>Loading More...</span>
+                        </>
+                      ) : (
+                        <span>Load More Titles (+24)</span>
+                      )}
+                    </Button>
+                  )}
+                  <Link
+                    href="/top-100"
+                    className="text-xs font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 hover:bg-amber-500/20 transition-all cursor-pointer shadow-sm"
+                  >
+                    <Trophy className="h-3.5 w-3.5" />
+                    <span>Top 100 Hall of Fame</span>
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </Link>
+                  <Link
+                    href="/latest-updates"
+                    className="text-xs font-semibold text-white/70 hover:text-white flex items-center gap-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2 hover:bg-white/10 transition-all cursor-pointer"
+                  >
+                    <Clock className="h-3.5 w-3.5 text-violet-400" />
+                    <span>Latest Updates</span>
+                  </Link>
+                </div>
+              </div>
+            </>
+          )}
+        </section>
 
         {/* Seasonal Section: Manga whose anime is currently airing */}
         <section className="mt-10 sm:mt-12 px-6 sm:px-12 lg:px-20 relative z-10">

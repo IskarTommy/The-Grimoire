@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   BookOpen,
   Clock,
@@ -14,13 +15,18 @@ import {
   ArrowLeft,
   LayoutGrid,
   List,
+  Bookmark,
+  Plus,
+  Loader2,
 } from "lucide-react";
 import { useLatestUpdatesManga, fetchGenresApi } from "@/hooks/use-anilist";
+import { useLibrary } from "@/hooks/use-library";
+import { useAuth } from "@/contexts/auth-context";
 import { SearchModal } from "@/components/search/search-modal";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { UserMenu } from "@/components/navigation/user-menu";
-import { GrimoireLogo } from "@/components/ui/grimoire-logo";
+import { GrimoireBrand } from "@/components/ui/grimoire-brand";
 
 function cleanSynopsis(synopsis?: string) {
   if (!synopsis) return "";
@@ -35,12 +41,65 @@ const ORIGINS = [
 ];
 
 export default function LatestUpdatesPage() {
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
+  const { isInLibrary, getLibraryEntry, addToLibrary, updateStatus } = useLibrary();
+  const [addingId, setAddingId] = useState<string | number | null>(null);
+
   const [country, setCountry] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("");
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [genres, setGenres] = useState<string[]>([]);
   const [searchOpen, setSearchOpen] = useState(false);
+
+  const handleQuickAdd = async (
+    e: React.MouseEvent,
+    item: any,
+    targetStatus: string = "reading"
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      router.push(`/login?redirect=/latest-updates`);
+      return;
+    }
+
+    if (isInLibrary(item.id)) {
+      const entry = getLibraryEntry(item.id);
+      const isPlan = (entry?.status || "").toLowerCase() === "plan_to_read";
+      router.push(isPlan ? "/dashboard?nav=planned" : "/dashboard");
+      return;
+    }
+
+    try {
+      setAddingId(item.id);
+      await addToLibrary({
+        mangaId: String(item.id),
+        title: item.title,
+        coverUrl: item.cover,
+        status: targetStatus,
+      });
+    } catch (err) {
+      console.error("Failed to add to library:", err);
+    } finally {
+      setAddingId(null);
+    }
+  };
+
+  const handleStartReading = async (e: React.MouseEvent, item: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      setAddingId(item.id);
+      await updateStatus(item.id, "reading");
+    } catch (err) {
+      console.error("Failed to start reading:", err);
+    } finally {
+      setAddingId(null);
+    }
+  };
 
   const { updates, loading } = useLatestUpdatesManga(country, selectedGenre, page);
 
@@ -64,21 +123,25 @@ export default function LatestUpdatesPage() {
     <div className="min-h-screen bg-background text-foreground">
       {/* Top Sticky Header */}
       <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between px-6 sm:px-12 lg:px-20 backdrop-blur-md border-b border-white/5 bg-background/80">
-        <div className="flex items-center gap-4">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-white/60 hover:text-white transition-colors group text-sm font-medium"
-          >
-            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-            <span className="hidden sm:inline">Back to Home</span>
-          </Link>
-          <div className="h-4 w-px bg-white/10 hidden sm:block" />
-          <Link href="/" className="flex items-center gap-2.5">
-            <GrimoireLogo size={32} />
-            <span className="font-display text-lg font-bold tracking-tight text-white">
-              Grimoire
-            </span>
-          </Link>
+        <div className="flex items-center gap-6">
+          <GrimoireBrand href="/" size="sm" />
+          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-white/70">
+            <Link href="/" className="hover:text-violet-400 transition-colors">
+              Home
+            </Link>
+            <Link href="/top-100" className="hover:text-violet-400 transition-colors">
+              Top 100
+            </Link>
+            <Link href="/seasonal" className="hover:text-violet-400 transition-colors">
+              Seasonal
+            </Link>
+            <Link href="/latest-updates" className="text-violet-400 font-bold">
+              Latest Updates
+            </Link>
+            <Link href="/dashboard" className="hover:text-violet-400 transition-colors">
+              My Library
+            </Link>
+          </nav>
         </div>
 
         <div className="flex items-center gap-3 sm:gap-4">
@@ -238,14 +301,22 @@ export default function LatestUpdatesPage() {
                 <Link
                   key={item.id}
                   href={`/manga/${item.id}`}
-                  className="group relative flex flex-col rounded-2xl border border-white/10 bg-[#0d1017] overflow-hidden hover:border-cyan-500/50 hover:shadow-2xl hover:shadow-cyan-900/20 transition-all duration-300 hover:-translate-y-1.5"
+                  className={cn(
+                    "group relative flex flex-col rounded-2xl border overflow-hidden transition-all duration-300 hover:-translate-y-1.5",
+                    isInLibrary(item.id)
+                      ? "border-emerald-500/25 bg-emerald-950/[0.08]"
+                      : "border-white/10 bg-[#0d1017] hover:border-cyan-500/50 hover:shadow-2xl hover:shadow-cyan-900/20"
+                  )}
                 >
                   {/* Cover */}
                   <div className="relative aspect-[3/4.3] w-full overflow-hidden bg-black">
                     <img
                       src={item.cover}
                       alt={item.title}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      className={cn(
+                        "h-full w-full object-cover transition-all duration-500 group-hover:scale-105",
+                        isInLibrary(item.id) && "opacity-55 saturate-50 contrast-90 group-hover:opacity-95 group-hover:saturate-100"
+                      )}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0d1017] via-transparent to-transparent opacity-80" />
 
@@ -262,16 +333,99 @@ export default function LatestUpdatesPage() {
 
                     {/* Bottom Indicators */}
                     <div className="absolute bottom-2 inset-x-2 flex items-center justify-between">
-                      {item.hasAnime ? (
-                        <span className="rounded bg-fuchsia-600/90 backdrop-blur-sm px-1.5 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider shadow">
-                          Anime
-                        </span>
-                      ) : (
-                        <span />
-                      )}
+                      <div className="flex items-center gap-1">
+                        {item.hasAnime && (
+                          <span className="rounded bg-fuchsia-600/90 backdrop-blur-sm px-1.5 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider shadow">
+                            Anime
+                          </span>
+                        )}
+                        {isInLibrary(item.id) && (
+                          <span className="flex items-center gap-0.5 rounded bg-emerald-600/90 backdrop-blur-sm px-1.5 py-0.5 text-[9px] font-bold text-white tracking-wider shadow">
+                            <Bookmark className="h-2.5 w-2.5 fill-white" />
+                            Saved
+                          </span>
+                        )}
+                      </div>
                       <div className="rounded bg-black/85 backdrop-blur-sm px-1.5 py-0.5 text-[10px] font-bold shadow">
                         {item.origin === "KR" ? "🇰🇷" : item.origin === "CN" ? "🇨🇳" : "🇯🇵"}
                       </div>
+                    </div>
+
+                    {/* Hover Quick Action Buttons */}
+                    <div className="absolute left-2 bottom-9 translate-y-2 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 z-20 flex items-center gap-1">
+                      {isInLibrary(item.id) && (getLibraryEntry(item.id)?.status || "").toLowerCase() === "plan_to_read" ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={(e) => handleStartReading(e, item)}
+                            disabled={addingId === item.id}
+                            className="flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-bold shadow-lg backdrop-blur-md transition-all cursor-pointer bg-gradient-to-r from-violet-600 to-indigo-600 hover:brightness-110 text-white shadow-violet-600/40 border border-white/15"
+                            title="Move from Plan to Read to Reading status"
+                          >
+                            {addingId === item.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <BookOpen className="h-3 w-3 text-white" />
+                            )}
+                            <span>Start Reading</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              router.push("/dashboard?nav=planned");
+                            }}
+                            className="flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-bold shadow-lg backdrop-blur-md transition-all cursor-pointer bg-amber-600/90 hover:bg-amber-500 text-white border border-amber-400/40"
+                            title="View in Planned Library"
+                          >
+                            <Bookmark className="h-3 w-3 fill-white text-white" />
+                            <span>Plan</span>
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={(e) => handleQuickAdd(e, item, "reading")}
+                            disabled={addingId === item.id}
+                            className={cn(
+                              "flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-bold shadow-lg backdrop-blur-md transition-all cursor-pointer",
+                              isInLibrary(item.id)
+                                ? "bg-emerald-600/90 hover:bg-emerald-500 text-white border border-emerald-400/30"
+                                : "bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 text-white shadow-violet-600/40 border border-white/15"
+                            )}
+                            title={isInLibrary(item.id) ? "View in Library" : "Add to Reading"}
+                          >
+                            {addingId === item.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : isInLibrary(item.id) ? (
+                              <>
+                                <BookOpen className="h-3 w-3 text-white" />
+                                <span>In Library</span>
+                              </>
+                            ) : (
+                              <>
+                                <Plus className="h-3 w-3 text-white" />
+                                <span>+ Reading</span>
+                              </>
+                            )}
+                          </button>
+
+                          {!isInLibrary(item.id) && (
+                            <button
+                              type="button"
+                              onClick={(e) => handleQuickAdd(e, item, "plan_to_read")}
+                              disabled={addingId === item.id}
+                              className="flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-bold shadow-lg backdrop-blur-md transition-all cursor-pointer bg-amber-600/90 hover:bg-amber-500 text-white border border-amber-400/40"
+                              title="Save to Plan to Read"
+                            >
+                              <Bookmark className="h-3 w-3 fill-white text-white" />
+                              <span>Plan</span>
+                            </button>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -319,7 +473,10 @@ export default function LatestUpdatesPage() {
                     <img
                       src={item.cover}
                       alt={item.title}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover/cover:scale-105"
+                      className={cn(
+                        "h-full w-full object-cover transition-all duration-300 group-hover/cover:scale-105",
+                        isInLibrary(item.id) && "opacity-55 saturate-50 contrast-90 group-hover/cover:opacity-95 group-hover/cover:saturate-100"
+                      )}
                     />
                     <div className="absolute bottom-1 right-1 rounded bg-black/85 px-1 py-0.5 text-[9px] font-bold">
                       {item.origin === "KR" ? "🇰🇷" : item.origin === "CN" ? "🇨🇳" : "🇯🇵"}
@@ -337,6 +494,17 @@ export default function LatestUpdatesPage() {
                       <span className="rounded bg-emerald-500/20 border border-emerald-500/30 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-300">
                         {item.status}
                       </span>
+                      {item.hasAnime && (
+                        <span className="rounded bg-fuchsia-500/20 border border-fuchsia-500/30 px-1.5 py-0.5 text-[10px] font-semibold text-fuchsia-300">
+                          Anime
+                        </span>
+                      )}
+                      {isInLibrary(item.id) && (
+                        <span className="flex items-center gap-1 rounded bg-emerald-500/20 border border-emerald-500/30 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-300">
+                          <Bookmark className="h-3 w-3 fill-emerald-400" />
+                          In Library
+                        </span>
+                      )}
                     </div>
 
                     <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-white/60">
@@ -364,7 +532,80 @@ export default function LatestUpdatesPage() {
                     </div>
                   </div>
 
-                  <div className="shrink-0 pt-2 sm:pt-0 self-end sm:self-center">
+                  <div className="shrink-0 pt-2 sm:pt-0 self-end sm:self-center flex flex-wrap items-center gap-2">
+                    {isInLibrary(item.id) && (getLibraryEntry(item.id)?.status || "").toLowerCase() === "plan_to_read" ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(e) => handleStartReading(e, item)}
+                          disabled={addingId === item.id}
+                          className="rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:brightness-110 border border-white/10"
+                          title="Move to Reading"
+                        >
+                          {addingId === item.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <BookOpen className="h-3.5 w-3.5" />
+                          )}
+                          <span>Start Reading</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            router.push("/dashboard?nav=planned");
+                          }}
+                          className="rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 shadow-sm bg-amber-600/20 text-amber-300 border border-amber-500/30 hover:bg-amber-600/30"
+                          title="View in Planned Library"
+                        >
+                          <Bookmark className="h-3.5 w-3.5 fill-amber-300" />
+                          <span className="hidden sm:inline">Plan</span>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(e) => handleQuickAdd(e, item, "reading")}
+                          disabled={addingId === item.id}
+                          className={cn(
+                            "rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm",
+                            isInLibrary(item.id)
+                              ? "bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600/30"
+                              : "bg-gradient-to-r from-violet-600/30 to-fuchsia-600/30 text-white border border-white/10 hover:border-violet-500/50"
+                          )}
+                        >
+                          {addingId === item.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : isInLibrary(item.id) ? (
+                            <>
+                              <BookOpen className="h-3.5 w-3.5" />
+                              <span>View in Library</span>
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="h-3.5 w-3.5" />
+                              <span>+ Reading</span>
+                            </>
+                          )}
+                        </button>
+
+                        {!isInLibrary(item.id) && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleQuickAdd(e, item, "plan_to_read")}
+                            disabled={addingId === item.id}
+                            className="rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 shadow-sm bg-amber-600/20 text-amber-300 border border-amber-500/30 hover:bg-amber-600/30"
+                            title="Plan to Read"
+                          >
+                            <Bookmark className="h-3.5 w-3.5 fill-amber-300" />
+                            <span className="hidden sm:inline">Plan</span>
+                          </button>
+                        )}
+                      </>
+                    )}
+
                     <Link href={`/manga/${item.id}`}>
                       <Button
                         size="sm"

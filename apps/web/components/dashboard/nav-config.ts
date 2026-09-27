@@ -27,7 +27,6 @@ export const PRIMARY_NAV: NavItem[] = [
 ];
 
 export const SECONDARY_NAV: NavItem[] = [
-  { key: "discover", label: "Discover", icon: Compass },
   { key: "stats", label: "Statistics", icon: BarChart3 },
   { key: "settings", label: "Settings", icon: Settings },
 ];

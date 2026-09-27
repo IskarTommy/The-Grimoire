@@ -1,7 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { LayoutGrid, ArrowDownWideNarrow } from "lucide-react";
+import {
+  LayoutGrid,
+  List,
+  ArrowDownWideNarrow,
+  Search,
+  BookOpen,
+  Trophy,
+  Clock,
+  Tv,
+  Sparkles,
+} from "lucide-react";
+import Link from "next/link";
 import {
   Select,
   SelectContent,
@@ -9,40 +20,60 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MEDIA_ITEMS } from "@/lib/data";
+import { Input } from "@/components/ui/input";
 import type { ItemType, MediaItem } from "@/lib/types";
-import { MangaGrid } from "./manga-grid";
+import { LibraryMangaCard } from "./library-manga-card";
+import { LibraryMangaRow } from "./library-manga-row";
 import { SectionHeader } from "./section-header";
 import { cn } from "@/lib/utils";
+import { useLibrary } from "@/hooks/use-library";
 
 type FilterKey = "ALL" | ItemType;
-
-type SortKey = "updated" | "rating" | "progress" | "title";
+type StatusFilterKey = "ALL" | "reading" | "completed" | "plan_to_read" | "on_hold" | "dropped";
+type SortKey = "updated" | "rating" | "progress" | "chapters" | "title";
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: "updated", label: "Recently updated" },
-  { key: "rating", label: "Top rated" },
   { key: "progress", label: "Reading progress" },
+  { key: "rating", label: "Personal score" },
+  { key: "chapters", label: "Chapters read" },
   { key: "title", label: "Title (A–Z)" },
 ];
 
+const STATUS_FILTERS: { key: StatusFilterKey; label: string }[] = [
+  { key: "ALL", label: "All Statuses" },
+  { key: "reading", label: "Reading" },
+  { key: "completed", label: "Completed" },
+  { key: "plan_to_read", label: "Plan to Read" },
+  { key: "on_hold", label: "On Hold" },
+  { key: "dropped", label: "Dropped" },
+];
+
 type LibraryViewProps = {
-  query: string;
+  query?: string;
   items?: MediaItem[];
   title?: string;
   subtitle?: string;
+  defaultStatusFilter?: StatusFilterKey;
 };
 
 export function LibraryView({
-  query,
-  items = MEDIA_ITEMS,
+  query: propQuery = "",
+  items: propItems,
   title = "Your Library",
   subtitle,
+  defaultStatusFilter = "ALL",
 }: LibraryViewProps) {
-  const [filter, setFilter] = useState<FilterKey>("ALL");
-  const [sort, setSort] = useState<SortKey>("updated");
+  const { libraryItems, getLibraryEntry } = useLibrary();
+  const items = propItems || libraryItems;
 
-  // Only show type pills for types that actually exist in the dataset.
+  const [filter, setFilter] = useState<FilterKey>("ALL");
+  const [statusFilter, setStatusFilter] = useState<StatusFilterKey>(defaultStatusFilter);
+  const [sort, setSort] = useState<SortKey>("updated");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [searchQuery, setSearchQuery] = useState(propQuery);
+
+  // Available formats
   const availableTypes = useMemo(() => {
     const set = new Set<ItemType>();
     items.forEach((i) => set.add(i.type));
@@ -52,7 +83,7 @@ export function LibraryView({
   }, [items]);
 
   const filters: { key: FilterKey; label: string }[] = [
-    { key: "ALL", label: "All" },
+    { key: "ALL", label: "All Formats" },
     ...availableTypes.map((t) => ({
       key: t as FilterKey,
       label:
@@ -68,24 +99,53 @@ export function LibraryView({
 
   const visible = useMemo(() => {
     let list = [...items];
+
+    // Format filter
     if (filter !== "ALL" && availableTypes.includes(filter as ItemType)) {
       list = list.filter((i) => i.type === filter);
     }
-    const q = query.trim().toLowerCase();
+
+    // Status filter
+    if (statusFilter !== "ALL") {
+      list = list.filter((i) => {
+        const rawStatus = (getLibraryEntry(i.id)?.status || "reading").toLowerCase();
+        return rawStatus === statusFilter;
+      });
+    }
+
+    // Search query
+    const q = (searchQuery || propQuery).trim().toLowerCase();
     if (q) {
       list = list.filter(
         (i) =>
           i.title.toLowerCase().includes(q) ||
-          i.author.toLowerCase().includes(q) ||
+          (i.author && i.author.toLowerCase().includes(q)) ||
           i.genres.some((g) => g.toLowerCase().includes(q)),
       );
     }
+
+    // Sorting
     switch (sort) {
       case "rating":
-        list.sort((a, b) => b.rating - a.rating);
+        list.sort((a, b) => {
+          const rA = getLibraryEntry(a.id)?.rating ?? a.rating ?? 0;
+          const rB = getLibraryEntry(b.id)?.rating ?? b.rating ?? 0;
+          return rB - rA;
+        });
         break;
       case "progress":
-        list.sort((a, b) => b.progress - a.progress);
+        list.sort((a, b) => {
+          const pA = a.totalChapters && a.totalChapters > 0 ? ((a.currentChapter || 0) / a.totalChapters) * 100 : a.progress;
+          const pB = b.totalChapters && b.totalChapters > 0 ? ((b.currentChapter || 0) / b.totalChapters) * 100 : b.progress;
+          return pB - pA;
+        });
+        break;
+      case "chapters":
+        list.sort((a, b) => {
+          const cA = getLibraryEntry(a.id)?.currentChapter ?? a.currentChapter ?? 0;
+          const cB = getLibraryEntry(b.id)?.currentChapter ?? b.currentChapter ?? 0;
+          return cB - cA;
+        });
         break;
       case "title":
         list.sort((a, b) => a.title.localeCompare(b.title));
@@ -95,81 +155,160 @@ export function LibraryView({
         break;
     }
     return list;
-  }, [items, filter, sort, query, availableTypes]);
+  }, [items, filter, statusFilter, sort, searchQuery, propQuery, availableTypes, getLibraryEntry]);
 
   const resolvedSubtitle =
     subtitle ?? `${visible.length} ${visible.length === 1 ? "title" : "titles"} in your collection`;
 
   return (
-    <section className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <SectionHeader
-          title={title}
-          subtitle={resolvedSubtitle}
-          actionLabel=""
-          onAction={() => {}}
-        />
+    <section className="space-y-5">
+      {/* Top Header & Multi-Control Bar */}
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <SectionHeader
+            title={title}
+            subtitle={resolvedSubtitle}
+            actionLabel=""
+            onAction={() => {}}
+          />
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Filter pills */}
-          <div className="no-scrollbar flex items-center gap-1 overflow-x-auto rounded-xl border border-white/[0.07] bg-white/[0.02] p-1">
-            {filters.map((f) => (
+          {/* Right Controls: View Switcher & Sort */}
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            {/* View Mode Switcher */}
+            <div className="flex items-center rounded-xl border border-white/10 bg-white/[0.03] p-1">
               <button
-                key={f.key}
                 type="button"
-                onClick={() => setFilter(f.key)}
+                onClick={() => setViewMode("grid")}
                 className={cn(
-                  "relative shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
-                  filter === f.key
+                  "flex h-8 w-8 items-center justify-center rounded-lg transition-colors cursor-pointer",
+                  viewMode === "grid"
+                    ? "bg-violet-600 text-white shadow-sm shadow-violet-600/30"
+                    : "text-white/50 hover:text-white"
+                )}
+                title="Grid Poster View"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                className={cn(
+                  "flex h-8 w-8 items-center justify-center rounded-lg transition-colors cursor-pointer",
+                  viewMode === "list"
+                    ? "bg-violet-600 text-white shadow-sm shadow-violet-600/30"
+                    : "text-white/50 hover:text-white"
+                )}
+                title="List Table View"
+              >
+                <List className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Sort Selector */}
+            <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+              <SelectTrigger className="h-9 w-[165px] gap-2 rounded-xl border-white/[0.08] bg-white/[0.03] text-xs font-semibold text-white hover:bg-white/[0.06] focus:ring-violet-400/20">
+                <ArrowDownWideNarrow className="h-3.5 w-3.5 text-violet-400" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="border-white/10 bg-[#141624]/95 backdrop-blur-xl">
+                {SORTS.map((s) => (
+                  <SelectItem
+                    key={s.key}
+                    value={s.key}
+                    className="text-xs focus:bg-violet-500/20 focus:text-white"
+                  >
+                    {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Filter Pills & In-Library Instant Search */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+          {/* Format / Status Pills */}
+          <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto rounded-xl border border-white/[0.07] bg-white/[0.02] p-1">
+            {STATUS_FILTERS.map((sf) => (
+              <button
+                key={sf.key}
+                type="button"
+                onClick={() => setStatusFilter(sf.key)}
+                className={cn(
+                  "relative shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer",
+                  statusFilter === sf.key
                     ? "text-white"
-                    : "text-muted-foreground hover:text-foreground",
+                    : "text-white/50 hover:text-white hover:bg-white/5"
                 )}
               >
-                {filter === f.key && (
-                  <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-violet-500/80 to-fuchsia-500/70 shadow-[0_4px_14px_-4px_oklch(0.62_0.24_295_/_0.6)]" />
+                {statusFilter === sf.key && (
+                  <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 shadow-sm" />
                 )}
-                <span className="relative">{f.label}</span>
+                <span className="relative">{sf.label}</span>
               </button>
             ))}
           </div>
 
-          {/* Sort */}
-          <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-            <SelectTrigger className="h-9 w-[170px] gap-2 rounded-xl border-white/[0.07] bg-white/[0.02] text-xs font-medium text-foreground hover:bg-white/[0.04] focus:ring-violet-400/20">
-              <ArrowDownWideNarrow className="h-3.5 w-3.5 text-muted-foreground" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="border-white/10 bg-popover/95 backdrop-blur-xl">
-              {SORTS.map((s) => (
-                <SelectItem
-                  key={s.key}
-                  value={s.key}
-                  className="text-xs focus:bg-violet-500/15"
-                >
-                  {s.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Instant Search Bar */}
+          <div className="relative sm:w-64 shrink-0">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/40" />
+            <Input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search in library..."
+              className="h-9 pl-9 pr-4 text-xs rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-white/40 focus-visible:border-violet-500"
+            />
+          </div>
         </div>
       </div>
 
+      {/* Main List / Grid Display */}
       {visible.length === 0 ? (
-        <div className="flex min-h-[240px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-8 text-center">
-          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white/[0.04] text-muted-foreground">
-            <LayoutGrid className="h-6 w-6" />
+        <div className="flex min-h-[260px] flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-8 text-center">
+          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-white/[0.04] text-violet-400 border border-white/10">
+            <BookOpen className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-foreground">
-              No titles match your search
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Try a different filter or keyword.
+            <h4 className="text-base font-bold text-white">No titles match your filter</h4>
+            <p className="mt-1 text-xs text-white/50 max-w-sm">
+              {searchQuery
+                ? `No titles found matching "${searchQuery}". Try a different keyword.`
+                : "No manga found under this status filter. Add titles from discovery to get started."}
             </p>
           </div>
+          <div className="flex flex-wrap items-center justify-center gap-2.5 mt-2">
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter("ALL");
+                setFilter("ALL");
+                setSearchQuery("");
+              }}
+              className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              Reset Filters
+            </button>
+            <Link
+              href="/top-100"
+              className="rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3 py-1.5 text-xs font-semibold text-white hover:brightness-110 transition-all cursor-pointer shadow-sm"
+            >
+              Browse Top 100
+            </Link>
+          </div>
+        </div>
+      ) : viewMode === "grid" ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+          {visible.map((item, i) => (
+            <LibraryMangaCard key={item.id} item={item} index={i} />
+          ))}
         </div>
       ) : (
-        <MangaGrid items={visible} dense />
+        <div className="flex flex-col gap-2.5">
+          {visible.map((item, i) => (
+            <LibraryMangaRow key={item.id} item={item} index={i} />
+          ))}
+        </div>
       )}
     </section>
   );

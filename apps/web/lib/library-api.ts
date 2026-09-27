@@ -36,7 +36,7 @@ export async function fetchUserLibraryApi(token: string): Promise<DbLibraryEntry
 
 export async function addToLibraryApi(
   token: string,
-  params: { mangaId: string; title: string; coverUrl?: string }
+  params: { mangaId: string | number; title: string; coverUrl?: string; status?: string }
 ): Promise<DbLibraryEntry> {
   const res = await fetch(`${API_URL}/library/add`, {
     method: 'POST',
@@ -44,7 +44,10 @@ export async function addToLibraryApi(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(params),
+    body: JSON.stringify({
+      ...params,
+      mangaId: String(params.mangaId),
+    }),
   });
 
   const data = await res.json();
@@ -57,10 +60,11 @@ export async function addToLibraryApi(
 
 export async function updateProgressApi(
   token: string,
-  mangaId: string,
-  params: { currentChapter: number; status?: string }
+  mangaId: string | number,
+  params: { currentChapter?: number; status?: string; rating?: number }
 ): Promise<DbLibraryEntry> {
-  const res = await fetch(`${API_URL}/library/${mangaId}`, {
+  const idStr = String(mangaId);
+  const res = await fetch(`${API_URL}/library/${encodeURIComponent(idStr)}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -76,3 +80,22 @@ export async function updateProgressApi(
 
   return data;
 }
+
+export async function removeFromLibraryApi(
+  token: string,
+  mangaId: string | number
+): Promise<void> {
+  const idStr = String(mangaId);
+  const res = await fetch(`${API_URL}/library/${encodeURIComponent(idStr)}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.message || 'Failed to remove from library');
+  }
+}
+

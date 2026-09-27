@@ -27,8 +27,55 @@ export class AnilistService {
         return entry ? entry.data : null;
     }
 
+    public detectHasAnime(item: any): boolean {
+        if (!item) return false;
+        if (Boolean(item.airingAnimeTitle)) return true;
+
+        const edges = item.relations?.edges;
+        if (!Array.isArray(edges) || edges.length === 0) return false;
+
+        // 1. Direct anime relation (excluding purely character cameos)
+        const hasDirectAnime = edges.some(
+            (edge: any) => edge?.node?.type === 'ANIME' && edge?.relationType !== 'CHARACTER'
+        );
+        if (hasDirectAnime) return true;
+
+        // 2. Indirect anime via source novel, parent, or alternative original work
+        const hasIndirectAnime = edges.some((edge: any) => {
+            if (!['SOURCE', 'ALTERNATIVE', 'PARENT'].includes(edge?.relationType)) {
+                return false;
+            }
+            const nestedEdges = edge?.node?.relations?.edges;
+            if (!Array.isArray(nestedEdges)) return false;
+
+            return nestedEdges.some(
+                (subEdge: any) => subEdge?.node?.type === 'ANIME' && subEdge?.relationType !== 'CHARACTER'
+            );
+        });
+
+        return hasIndirectAnime;
+    }
+
+    public enrichWithAnimeFlags<T extends any>(data: T): T {
+        if (!data) return data;
+        if (Array.isArray(data)) {
+            for (const item of data) {
+                if (item && typeof item === 'object') {
+                    item.hasAnime = this.detectHasAnime(item);
+                }
+            }
+            return data;
+        }
+        if (typeof data === 'object') {
+            (data as any).hasAnime = this.detectHasAnime(data);
+        }
+        return data;
+    }
+
     private setCached<T>(key: string, data: T, ttlMs = 10 * 60 * 1000) {
-        this.cache.set(key, { data, timestamp: Date.now(), ttl: ttlMs });
+        const enriched = this.enrichWithAnimeFlags(data);
+        this.cache.set(key, { data: enriched, timestamp: Date.now(), ttl: ttlMs });
+        return enriched;
     }
 
     private readonly MEDIA_FIELDS = `
@@ -48,7 +95,27 @@ export class AnilistService {
         relations {
             edges {
                 relationType(version: 2)
-                node { type format status isAdult genres }
+                node {
+                    id
+                    type
+                    format
+                    status
+                    isAdult
+                    genres
+                    title { romaji english }
+                    relations {
+                        edges {
+                            relationType(version: 2)
+                            node {
+                                id
+                                type
+                                format
+                                status
+                                title { romaji english }
+                            }
+                        }
+                    }
+                }
             }
         }
     `;

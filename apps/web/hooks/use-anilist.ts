@@ -2,15 +2,38 @@ import { useState, useEffect } from "react";
 import { MediaItem } from "../lib/types";
 
 
-function mapAnilistItem(item: any): MediaItem {
-    // Loop through relations to see if an anime adaptation exists
-    const hasAnime =
-        Boolean(item.airingAnimeTitle) ||
-        item.relations?.edges?.some(
-            (edge: any) =>
-                (edge.relationType === 'ADAPTATION' || edge.relationType === 'SOURCE') &&
-                edge.node?.type === 'ANIME'
-        ) || false;
+export function detectHasAnime(item: any): boolean {
+    if (!item) return false;
+    if (typeof item.hasAnime === 'boolean') return item.hasAnime;
+    if (Boolean(item.airingAnimeTitle)) return true;
+
+    const edges = item.relations?.edges;
+    if (!Array.isArray(edges) || edges.length === 0) return false;
+
+    // 1. Direct anime relation (excluding purely character cameos)
+    const hasDirectAnime = edges.some(
+        (edge: any) => edge?.node?.type === 'ANIME' && edge?.relationType !== 'CHARACTER'
+    );
+    if (hasDirectAnime) return true;
+
+    // 2. Indirect anime via source novel, parent, or alternative original work
+    const hasIndirectAnime = edges.some((edge: any) => {
+        if (!['SOURCE', 'ALTERNATIVE', 'PARENT'].includes(edge?.relationType)) {
+            return false;
+        }
+        const nestedEdges = edge?.node?.relations?.edges;
+        if (!Array.isArray(nestedEdges)) return false;
+
+        return nestedEdges.some(
+            (subEdge: any) => subEdge?.node?.type === 'ANIME' && subEdge?.relationType !== 'CHARACTER'
+        );
+    });
+
+    return hasIndirectAnime;
+}
+
+export function mapAnilistItem(item: any): MediaItem {
+    const hasAnime = detectHasAnime(item);
 
     return {
         id: String(item.id),
