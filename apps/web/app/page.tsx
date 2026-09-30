@@ -567,11 +567,11 @@ export default function LandingPage() {
                 <span className="h-2.5 w-2.5 rounded-full bg-violet-400 animate-pulse" />
                 <h2 className="text-2xl font-bold font-display text-white">This Season&apos;s Manga</h2>
                 <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full border border-violet-400/30 bg-violet-500/15 text-violet-300">
-                  Anime Adaptations
+                  {seasonal[0]?.currentSeason ? `${seasonal[0].currentSeason} Anime` : "Anime Adaptations"}
                 </span>
               </div>
               <p className="text-sm text-muted-foreground mt-1">
-                Read the original source manga behind this season&apos;s hottest anime releases
+                Read the original source manga behind this season&apos;s anime broadcasts, including shows premiering this week &amp; next week
               </p>
             </div>
             <Link

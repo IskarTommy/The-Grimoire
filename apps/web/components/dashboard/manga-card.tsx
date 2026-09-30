@@ -126,12 +126,24 @@ export function MangaCard({ item, index = 0 }: MangaCardProps) {
               >
                 {type.label}
               </span>
-              {item.hasAnime && (
+              {item.airingBadge ? (
+                <span className={cn(
+                  "flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-bold tracking-wide backdrop-blur-md shadow-md",
+                  item.airingBadge === "Aired This Week"
+                    ? "border-emerald-400/50 bg-emerald-500/25 text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+                    : item.airingBadge === "Starts Next Week"
+                    ? "border-indigo-400/50 bg-indigo-500/25 text-indigo-300 shadow-[0_0_10px_rgba(99,102,241,0.3)]"
+                    : "border-sky-300/30 bg-sky-500/20 text-sky-200 shadow-[0_0_10px_rgba(14,165,233,0.2)]"
+                )}>
+                  <Tv className="h-3 w-3" />
+                  {item.airingBadge}
+                </span>
+              ) : item.hasAnime ? (
                 <span className="flex items-center gap-1 rounded-md border border-sky-300/30 bg-sky-500/20 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-sky-200 backdrop-blur-md shadow-[0_0_10px_rgba(14,165,233,0.2)]">
                   <Tv className="h-3 w-3" />
                   Anime
                 </span>
-              )}
+              ) : null}
               {inLibrary && (
                 <span
                   className={cn(
@@ -264,9 +276,15 @@ export function MangaCard({ item, index = 0 }: MangaCardProps) {
             )}>
               {item.title}
             </h3>
-            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-              {item.author}
-            </p>
+            {item.airingAnimeTitle ? (
+              <p className="mt-0.5 truncate text-[11px] font-medium text-fuchsia-300" title={`Adapts ${item.airingAnimeTitle}`}>
+                📺 {item.airingAnimeTitle}
+              </p>
+            ) : (
+              <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                {item.author}
+              </p>
+            )}
           </div>
 
           {/* Progress */}

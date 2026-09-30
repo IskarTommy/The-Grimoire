@@ -178,13 +178,13 @@ export default function SeasonalPage() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-3 py-1 text-xs font-semibold text-fuchsia-300 mb-3 shadow-inner">
                 <Tv className="h-3.5 w-3.5" />
-                Anime Adaptations
+                <span>Anime Adaptations • {activeTab === "current" ? (currentSeasonal[0]?.currentSeason || "Fall 2026") : (upcomingSeasonal[0]?.upcomingSeason || "Winter 2027")}</span>
               </div>
               <h1 className="text-3xl sm:text-4xl font-extrabold font-display tracking-tight text-white">
                 Seasonal Anime Manga
               </h1>
               <p className="mt-2 text-sm sm:text-base text-white/60 max-w-2xl">
-                Read the original source manga behind your favorite anime series, including currently airing adaptations and upcoming releases.
+                Read the original source manga behind this season&apos;s anime adaptations. Pruning finished broadcasts and highlighting titles starting this week &amp; next week.
               </p>
             </div>
 
@@ -355,9 +355,18 @@ export default function SeasonalPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0d1017] via-transparent to-transparent opacity-80" />
 
                     {/* Anime Adapted Pill + In Library (Top Left) */}
-                    <div className="absolute top-2 left-2 flex items-center gap-1">
-                      <div className="rounded-md bg-fuchsia-600/90 backdrop-blur-md px-2 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider shadow">
-                        {activeTab === "current" ? "Airing Now" : "Upcoming Anime"}
+                    <div className="absolute top-2 left-2 flex flex-wrap items-center gap-1 z-10 max-w-[80%]">
+                      <div className={cn(
+                        "rounded-md px-2 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider shadow backdrop-blur-md",
+                        item.airingBadge === "Aired This Week"
+                          ? "bg-emerald-600/90 border border-emerald-400/40 shadow-emerald-600/30"
+                          : item.airingBadge === "Starts Next Week"
+                          ? "bg-indigo-600/90 border border-indigo-400/40 shadow-indigo-600/30"
+                          : activeTab === "current"
+                          ? "bg-fuchsia-600/90"
+                          : "bg-blue-600/90"
+                      )}>
+                        {item.airingBadge || (activeTab === "current" ? "Airing Now" : "Upcoming Anime")}
                       </div>
                       {isInLibrary(item.id) && (
                         <div className="flex items-center gap-0.5 rounded-md bg-emerald-600/90 backdrop-blur-md px-1.5 py-0.5 text-[9px] font-bold text-white tracking-wider shadow">
@@ -530,6 +539,18 @@ export default function SeasonalPage() {
                       {item.airingAnimeTitle && (
                         <span className="rounded bg-fuchsia-500/20 border border-fuchsia-500/30 px-2 py-0.5 text-[11px] font-semibold text-fuchsia-300">
                           Source for: {item.airingAnimeTitle}
+                        </span>
+                      )}
+                      {item.airingBadge && (
+                        <span className={cn(
+                          "rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border",
+                          item.airingBadge === "Aired This Week"
+                            ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
+                            : item.airingBadge === "Starts Next Week"
+                            ? "bg-indigo-500/20 border-indigo-500/40 text-indigo-300"
+                            : "bg-fuchsia-500/20 border-fuchsia-500/30 text-fuchsia-300"
+                        )}>
+                          {item.airingBadge}
                         </span>
                       )}
                       {isInLibrary(item.id) && (

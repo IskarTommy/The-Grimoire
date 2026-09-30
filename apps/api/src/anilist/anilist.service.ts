@@ -98,23 +98,6 @@ export class AnilistService {
                 node {
                     id
                     type
-                    format
-                    status
-                    isAdult
-                    genres
-                    title { romaji english }
-                    relations {
-                        edges {
-                            relationType(version: 2)
-                            node {
-                                id
-                                type
-                                format
-                                status
-                                title { romaji english }
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -210,15 +193,55 @@ export class AnilistService {
         }
     }
 
+    public getCurrentAnimeSeason(date: Date = new Date()) {
+        const month = date.getMonth() + 1; // 1 - 12
+        const day = date.getDate();
+        const year = date.getFullYear();
+
+        let season: 'WINTER' | 'SPRING' | 'SUMMER' | 'FALL';
+        let seasonYear = year;
+        let nextSeason: 'WINTER' | 'SPRING' | 'SUMMER' | 'FALL';
+        let nextYear = year;
+
+        // Broadcast anime season transitions in Japan typically start 7-10 days before quarter end:
+        // Fall:   Sep 22 - Dec 21
+        // Winter: Dec 22 - Mar 21 (late Dec begins the upcoming year's Winter season)
+        // Spring: Mar 22 - Jun 21
+        // Summer: Jun 22 - Sep 21
+        if ((month === 12 && day >= 22) || month === 1 || month === 2 || (month === 3 && day < 22)) {
+            season = 'WINTER';
+            seasonYear = (month === 12) ? year + 1 : year;
+            nextSeason = 'SPRING';
+            nextYear = seasonYear;
+        } else if ((month === 3 && day >= 22) || month === 4 || month === 5 || (month === 6 && day < 22)) {
+            season = 'SPRING';
+            seasonYear = year;
+            nextSeason = 'SUMMER';
+            nextYear = year;
+        } else if ((month === 6 && day >= 22) || month === 7 || month === 8 || (month === 9 && day < 22)) {
+            season = 'SUMMER';
+            seasonYear = year;
+            nextSeason = 'FALL';
+            nextYear = year;
+        } else {
+            season = 'FALL';
+            seasonYear = year;
+            nextSeason = 'WINTER';
+            nextYear = year + 1;
+        }
+
+        return {
+            season,
+            year: seasonYear,
+            nextSeason,
+            nextYear,
+        };
+    }
+
     async getSeasonal() {
         const now = new Date();
-        const month = now.getMonth() + 1;
-        const year = now.getFullYear();
-        let season: string;
-        if (month >= 1 && month <= 3) season = 'WINTER';
-        else if (month >= 4 && month <= 6) season = 'SPRING';
-        else if (month >= 7 && month <= 9) season = 'SUMMER';
-        else season = 'FALL';
+        const seasonInfo = this.getCurrentAnimeSeason(now);
+        const { season, year } = seasonInfo;
 
         const cacheKey = `seasonal_manga_pure_${season}_${year}`;
         const cached = this.getCached<any[]>(cacheKey);
@@ -231,13 +254,28 @@ export class AnilistService {
                         media(type: ANIME, season: $s, seasonYear: $y, isAdult: false, sort: POPULARITY_DESC) {
                             id
                             title { romaji english }
+                            status
+                            startDate { year month day }
+                            nextAiringEpisode { episode airingAt }
                             isAdult
                             genres
                             relations {
                                 edges {
                                     relationType(version: 2)
                                     node {
-                                        ${this.MEDIA_FIELDS}
+                                        id
+                                        title { romaji english }
+                                        coverImage { extraLarge color }
+                                        bannerImage
+                                        countryOfOrigin
+                                        description(asHtml: false)
+                                        status
+                                        chapters
+                                        averageScore
+                                        genres
+                                        type
+                                        format
+                                        isAdult
                                     }
                                 }
                             }
@@ -247,13 +285,28 @@ export class AnilistService {
                         media(type: ANIME, season: $s, seasonYear: $y, isAdult: false, sort: POPULARITY_DESC) {
                             id
                             title { romaji english }
+                            status
+                            startDate { year month day }
+                            nextAiringEpisode { episode airingAt }
                             isAdult
                             genres
                             relations {
                                 edges {
                                     relationType(version: 2)
                                     node {
-                                        ${this.MEDIA_FIELDS}
+                                        id
+                                        title { romaji english }
+                                        coverImage { extraLarge color }
+                                        bannerImage
+                                        countryOfOrigin
+                                        description(asHtml: false)
+                                        status
+                                        chapters
+                                        averageScore
+                                        genres
+                                        type
+                                        format
+                                        isAdult
                                     }
                                 }
                             }
@@ -269,6 +322,40 @@ export class AnilistService {
 
             for (const anime of airingAnime) {
                 if (anime.isAdult || anime.genres?.includes('Hentai')) continue;
+                // Prune anime that have completed broadcast (status: FINISHED)
+                if (anime.status === 'FINISHED') continue;
+
+                // Determine airing timeline badge
+                let airingBadge = 'Airing Now';
+                if (anime.status === 'RELEASING') {
+                    if (anime.startDate?.year && anime.startDate?.month && anime.startDate?.day) {
+                        const start = new Date(anime.startDate.year, anime.startDate.month - 1, anime.startDate.day);
+                        const diffDays = Math.round((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+                        if (diffDays >= 0 && diffDays <= 7) {
+                            airingBadge = 'Aired This Week';
+                        } else {
+                            airingBadge = 'Currently Airing';
+                        }
+                    } else {
+                        airingBadge = 'Currently Airing';
+                    }
+                } else if (anime.status === 'NOT_YET_RELEASED') {
+                    if (anime.startDate?.year && anime.startDate?.month && anime.startDate?.day) {
+                        const start = new Date(anime.startDate.year, anime.startDate.month - 1, anime.startDate.day);
+                        const diffDays = Math.round((start.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                        if (diffDays <= 7 && diffDays >= 0) {
+                            airingBadge = 'Starts Next Week';
+                        } else if (diffDays <= 14 && diffDays > 7) {
+                            airingBadge = `Starts in ${diffDays}d`;
+                        } else {
+                            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                            airingBadge = `Starts ${monthNames[anime.startDate.month - 1]} ${anime.startDate.day}`;
+                        }
+                    } else {
+                        airingBadge = 'Starts Soon';
+                    }
+                }
+
                 const edges = anime.relations?.edges || [];
                 const mangaEdges = edges.filter(
                     (e: any) => {
@@ -295,6 +382,9 @@ export class AnilistService {
                         mangaList.push({
                             ...edge.node,
                             airingAnimeTitle: anime.title.english || anime.title.romaji,
+                            animeStatus: anime.status,
+                            animeStartDate: anime.startDate,
+                            airingBadge,
                             currentSeason: `${season} ${year}`,
                         });
                         break; // 1 primary manga per anime adaptation
@@ -373,10 +463,31 @@ export class AnilistService {
         const genre = params.genre?.trim() || undefined;
         const country = params.country?.trim() || undefined;
 
+        // When "Latest Drops" is selected, delegate to the authentic ongoing multi-origin updates engine!
+        if (params.sort === 'UPDATED_AT_DESC' && !q) {
+            return this.getLatestUpdates({ page, perPage, country, genre });
+        }
+
+        // When "Trending Now" is selected without text query or country/genre filters, use fast cached trending feed
+        if (params.sort === 'TRENDING_DESC' && !q && !genre && !country) {
+            const trending = await this.getTrending();
+            if (trending && trending.length > 0) {
+                const startIdx = (page - 1) * perPage;
+                const slice = trending.slice(startIdx, startIdx + perPage);
+                if (slice.length > 0) return slice;
+            }
+        }
+
         // Build sort array
         let sortList: string[] = ['POPULARITY_DESC'];
         if (params.sort) {
-            sortList = [params.sort];
+            if (params.sort === 'TRENDING_DESC') {
+                sortList = ['TRENDING_DESC', 'POPULARITY_DESC'];
+            } else if (params.sort === 'UPDATED_AT_DESC') {
+                sortList = ['UPDATED_AT_DESC', 'POPULARITY_DESC'];
+            } else {
+                sortList = [params.sort];
+            }
         } else if (q) {
             sortList = ['SEARCH_MATCH', 'POPULARITY_DESC'];
         }
@@ -386,32 +497,73 @@ export class AnilistService {
         if (cached) return cached;
 
         try {
+            const queryParams: string[] = ['$page: Int', '$perPage: Int', '$sort: [MediaSort]'];
+            // Note: omitting isAdult from GraphQL args prevents AniList unindexed full-table scan timeouts (>20s)
+            const mediaArgs: string[] = ['type: MANGA', 'sort: $sort'];
+            const variables: Record<string, any> = { page, perPage, sort: sortList };
+
+            if (q) {
+                queryParams.push('$search: String');
+                mediaArgs.push('search: $search');
+                variables.search = q;
+            }
+            if (genre) {
+                queryParams.push('$genre: String');
+                mediaArgs.push('genre: $genre');
+                variables.genre = genre;
+            }
+            if (country) {
+                queryParams.push('$country: CountryCode');
+                mediaArgs.push('countryOfOrigin: $country');
+                variables.country = country;
+            }
+
             const query = `
-                query ($search: String, $genre: String, $country: CountryCode, $sort: [MediaSort], $page: Int, $perPage: Int) {
+                query (${queryParams.join(', ')}) {
                     Page(page: $page, perPage: $perPage) {
-                        media(type: MANGA, search: $search, genre: $genre, countryOfOrigin: $country, sort: $sort, isAdult: false) {
+                        media(${mediaArgs.join(', ')}) {
                             ${this.MEDIA_FIELDS}
                         }
                     }
                 }
             `;
 
-            const variables: Record<string, any> = {
-                page,
-                perPage,
-                sort: sortList,
-            };
-            if (q) variables.search = q;
-            if (genre) variables.genre = genre;
-            if (country) variables.country = country;
+            let data = await this.queryAniList(query, variables);
+            let rawResults = data?.Page?.media || [];
 
-            const data = await this.queryAniList(query, variables);
-            const results = data?.Page?.media || [];
+            // If TRENDING_DESC returned empty, fallback to POPULARITY_DESC
+            if (rawResults.length === 0 && params.sort === 'TRENDING_DESC') {
+                const fallbackVars = { ...variables, sort: ['POPULARITY_DESC'] };
+                const fbData = await this.queryAniList(query, fallbackVars);
+                rawResults = fbData?.Page?.media || [];
+            }
+
+            const results = rawResults.filter((item: any) => !item.isAdult);
 
             this.setCached(cacheKey, results, 5 * 60 * 1000);
             return results;
         } catch (error) {
             console.error('AniList Search Error:', (error as any)?.message || error);
+            // If error was on TRENDING_DESC, try POPULARITY_DESC before giving up
+            if (params.sort === 'TRENDING_DESC') {
+                try {
+                    const fallbackQuery = `
+                        query ($page: Int, $perPage: Int) {
+                            Page(page: $page, perPage: $perPage) {
+                                media(type: MANGA, sort: POPULARITY_DESC) {
+                                    ${this.MEDIA_FIELDS}
+                                }
+                            }
+                        }
+                    `;
+                    const fbData = await this.queryAniList(fallbackQuery, { page, perPage });
+                    const results = (fbData?.Page?.media || []).filter((item: any) => !item.isAdult);
+                    if (results.length > 0) {
+                        this.setCached(cacheKey, results, 5 * 60 * 1000);
+                        return results;
+                    }
+                } catch { }
+            }
             const stale = this.getStaleFallback<any[]>(cacheKey);
             if (stale) return stale;
             return [];
@@ -429,19 +581,30 @@ export class AnilistService {
         if (cached) return cached;
 
         try {
+            const queryParams: string[] = ['$page: Int', '$perPage: Int'];
+            const mediaArgs: string[] = ['type: MANGA', 'sort: SCORE_DESC', 'isAdult: false'];
+            const variables: Record<string, any> = { page, perPage };
+
+            if (country) {
+                queryParams.push('$country: CountryCode');
+                mediaArgs.push('countryOfOrigin: $country');
+                variables.country = country;
+            }
+            if (genre) {
+                queryParams.push('$genre: String');
+                mediaArgs.push('genre: $genre');
+                variables.genre = genre;
+            }
+
             const query = `
-                query ($page: Int, $perPage: Int, $country: CountryCode, $genre: String) {
+                query (${queryParams.join(', ')}) {
                     Page(page: $page, perPage: $perPage) {
-                        media(type: MANGA, sort: SCORE_DESC, countryOfOrigin: $country, genre: $genre, isAdult: false) {
+                        media(${mediaArgs.join(', ')}) {
                             ${this.MEDIA_FIELDS}
                         }
                     }
                 }
             `;
-
-            const variables: Record<string, any> = { page, perPage };
-            if (country) variables.country = country;
-            if (genre) variables.genre = genre;
 
             const data = await this.queryAniList(query, variables);
             const results = data?.Page?.media || [];
@@ -494,31 +657,144 @@ export class AnilistService {
         const country = params.country?.trim() || undefined;
         const genre = params.genre?.trim() || undefined;
 
-        const cacheKey = `latest_updates_${page}_${perPage}_${country || 'all'}_${genre || 'all'}`;
+        const cacheKey = `latest_updates_v2_${page}_${perPage}_${country || 'all'}_${genre || 'all'}`;
         const cached = this.getCached<any[]>(cacheKey);
         if (cached) return cached;
 
         try {
-            const query = `
-                query ($page: Int, $perPage: Int, $country: CountryCode, $genre: String) {
-                    Page(page: $page, perPage: $perPage) {
-                        media(type: MANGA, sort: [UPDATED_AT_DESC], status: RELEASING, countryOfOrigin: $country, genre: $genre, isAdult: false) {
+            // Case 1: Specific Country requested (e.g. user clicked KR Manhwa, CN Manhua, or JP Manga)
+            if (country) {
+                const queryParams = ['$page: Int', '$perPage: Int', '$country: CountryCode'];
+                const mediaArgs = ['type: MANGA', 'status: RELEASING', 'countryOfOrigin: $country', 'sort: [UPDATED_AT_DESC, POPULARITY_DESC]', 'isAdult: false'];
+                const variables: Record<string, any> = { page, perPage, country };
+
+                if (genre) {
+                    queryParams.push('$genre: String');
+                    mediaArgs.push('genre: $genre');
+                    variables.genre = genre;
+                }
+
+                const query = `
+                    query (${queryParams.join(', ')}) {
+                        Page(page: $page, perPage: $perPage) {
+                            media(${mediaArgs.join(', ')}) {
+                                ${this.MEDIA_FIELDS}
+                            }
+                        }
+                    }
+                `;
+
+                let data = await this.queryAniList(query, variables);
+                let results = data?.Page?.media || [];
+
+                // Fallback to POPULARITY_DESC if UPDATED_AT_DESC returned empty or failed
+                if (results.length === 0) {
+                    const fallbackVars = { ...variables, sort: ['POPULARITY_DESC'] };
+                    const fallbackArgs = ['type: MANGA', 'status: RELEASING', 'countryOfOrigin: $country', 'sort: [POPULARITY_DESC]', 'isAdult: false'];
+                    if (genre) fallbackArgs.push('genre: $genre');
+                    const fallbackQuery = `
+                        query (${queryParams.join(', ')}) {
+                            Page(page: $page, perPage: $perPage) {
+                                media(${fallbackArgs.join(', ')}) {
+                                    ${this.MEDIA_FIELDS}
+                                }
+                            }
+                        }
+                    `;
+                    const fbData = await this.queryAniList(fallbackQuery, fallbackVars);
+                    results = fbData?.Page?.media || [];
+                }
+
+                if (results.length > 0) {
+                    this.setCached(cacheKey, results, 15 * 60 * 1000);
+                    return results;
+                }
+                return this.getStaleFallback(cacheKey) || [];
+            }
+
+            // Case 2: "All Origins" requested - Balanced representation of Manga (JP), Manhwa (KR), and Manhua (CN)
+            // Query active ongoing series across all 3 regions sorted by recently updated chapters/releases
+            const perOrigin = Math.max(Math.floor(perPage / 3), 10);
+            const genreVar = genre ? ', $genre: String' : '';
+            const genreArg = genre ? ', genre: $genre' : '';
+            const variables: Record<string, any> = { page, perOrigin };
+            if (genre) variables.genre = genre;
+
+            const balancedQuery = `
+                query ($page: Int, $perOrigin: Int${genreVar}) {
+                    kr: Page(page: $page, perPage: $perOrigin) {
+                        media(type: MANGA, countryOfOrigin: "KR", status: RELEASING, sort: [UPDATED_AT_DESC, POPULARITY_DESC], isAdult: false${genreArg}) {
+                            ${this.MEDIA_FIELDS}
+                        }
+                    }
+                    jp: Page(page: $page, perPage: $perOrigin) {
+                        media(type: MANGA, countryOfOrigin: "JP", status: RELEASING, sort: [UPDATED_AT_DESC, POPULARITY_DESC], isAdult: false${genreArg}) {
+                            ${this.MEDIA_FIELDS}
+                        }
+                    }
+                    cn: Page(page: $page, perPage: $perOrigin) {
+                        media(type: MANGA, countryOfOrigin: "CN", status: RELEASING, sort: [UPDATED_AT_DESC, POPULARITY_DESC], isAdult: false${genreArg}) {
                             ${this.MEDIA_FIELDS}
                         }
                     }
                 }
             `;
 
-            const variables: Record<string, any> = { page, perPage };
-            if (country) variables.country = country;
-            if (genre) variables.genre = genre;
+            let data = await this.queryAniList(balancedQuery, variables);
+            let krList: any[] = data?.kr?.media || [];
+            let jpList: any[] = data?.jp?.media || [];
+            let cnList: any[] = data?.cn?.media || [];
 
-            const data = await this.queryAniList(query, variables);
-            const results = data?.Page?.media || [];
+            // If any region returned 0, fallback with POPULARITY_DESC
+            if (krList.length === 0 || jpList.length === 0) {
+                const fallbackQuery = `
+                    query ($page: Int, $perOrigin: Int${genreVar}) {
+                        kr: Page(page: $page, perPage: $perOrigin) {
+                            media(type: MANGA, countryOfOrigin: "KR", status: RELEASING, sort: [POPULARITY_DESC], isAdult: false${genreArg}) {
+                                ${this.MEDIA_FIELDS}
+                            }
+                        }
+                        jp: Page(page: $page, perPage: $perOrigin) {
+                            media(type: MANGA, countryOfOrigin: "JP", status: RELEASING, sort: [POPULARITY_DESC], isAdult: false${genreArg}) {
+                                ${this.MEDIA_FIELDS}
+                            }
+                        }
+                        cn: Page(page: $page, perPage: $perOrigin) {
+                            media(type: MANGA, countryOfOrigin: "CN", status: RELEASING, sort: [POPULARITY_DESC], isAdult: false${genreArg}) {
+                                ${this.MEDIA_FIELDS}
+                            }
+                        }
+                    }
+                `;
+                const fbData = await this.queryAniList(fallbackQuery, variables);
+                if (krList.length === 0) krList = fbData?.kr?.media || [];
+                if (jpList.length === 0) jpList = fbData?.jp?.media || [];
+                if (cnList.length === 0) cnList = fbData?.cn?.media || [];
+            }
 
-            if (results.length > 0) {
-                this.setCached(cacheKey, results, 10 * 60 * 1000);
-                return results;
+            // Interleave/round-robin: JP, KR, CN, JP, KR, CN...
+            const combined: any[] = [];
+            const maxLen = Math.max(krList.length, jpList.length, cnList.length);
+            const seenIds = new Set<number>();
+
+            for (let i = 0; i < maxLen; i++) {
+                if (i < jpList.length && !seenIds.has(jpList[i].id)) {
+                    seenIds.add(jpList[i].id);
+                    combined.push(jpList[i]);
+                }
+                if (i < krList.length && !seenIds.has(krList[i].id)) {
+                    seenIds.add(krList[i].id);
+                    combined.push(krList[i]);
+                }
+                if (i < cnList.length && !seenIds.has(cnList[i].id)) {
+                    seenIds.add(cnList[i].id);
+                    combined.push(cnList[i]);
+                }
+            }
+
+            if (combined.length > 0) {
+                this.setCached(cacheKey, combined, 15 * 60 * 1000);
+                return combined;
             }
 
             return this.getStaleFallback(cacheKey) || [];
@@ -532,21 +808,8 @@ export class AnilistService {
 
     async getUpcomingSeasonal() {
         const now = new Date();
-        const month = now.getMonth() + 1;
-        const year = now.getFullYear();
-
-        let nextSeason: string;
-        let nextYear = year;
-        if (month >= 1 && month <= 3) {
-            nextSeason = 'SPRING';
-        } else if (month >= 4 && month <= 6) {
-            nextSeason = 'SUMMER';
-        } else if (month >= 7 && month <= 9) {
-            nextSeason = 'FALL';
-        } else {
-            nextSeason = 'WINTER';
-            nextYear = year + 1;
-        }
+        const seasonInfo = this.getCurrentAnimeSeason(now);
+        const { nextSeason, nextYear } = seasonInfo;
 
         const cacheKey = `upcoming_seasonal_pure_${nextSeason}_${nextYear}`;
         const cached = this.getCached<any[]>(cacheKey);
@@ -559,13 +822,27 @@ export class AnilistService {
                         media(type: ANIME, season: $season, seasonYear: $year, isAdult: false, sort: POPULARITY_DESC) {
                             id
                             title { english romaji }
+                            status
+                            startDate { year month day }
                             isAdult
                             genres
                             relations {
                                 edges {
                                     relationType(version: 2)
                                     node {
-                                        ${this.MEDIA_FIELDS}
+                                        id
+                                        title { romaji english }
+                                        coverImage { extraLarge color }
+                                        bannerImage
+                                        countryOfOrigin
+                                        description(asHtml: false)
+                                        status
+                                        chapters
+                                        averageScore
+                                        genres
+                                        type
+                                        format
+                                        isAdult
                                     }
                                 }
                             }
@@ -575,13 +852,27 @@ export class AnilistService {
                         media(type: ANIME, season: $season, seasonYear: $year, isAdult: false, sort: POPULARITY_DESC) {
                             id
                             title { english romaji }
+                            status
+                            startDate { year month day }
                             isAdult
                             genres
                             relations {
                                 edges {
                                     relationType(version: 2)
                                     node {
-                                        ${this.MEDIA_FIELDS}
+                                        id
+                                        title { romaji english }
+                                        coverImage { extraLarge color }
+                                        bannerImage
+                                        countryOfOrigin
+                                        description(asHtml: false)
+                                        status
+                                        chapters
+                                        averageScore
+                                        genres
+                                        type
+                                        format
+                                        isAdult
                                     }
                                 }
                             }
@@ -599,6 +890,8 @@ export class AnilistService {
 
             for (const anime of upcomingAnime) {
                 if (anime.isAdult || anime.genres?.includes('Hentai')) continue;
+                if (anime.status === 'FINISHED') continue;
+
                 const edges = anime.relations?.edges || [];
                 const mangaEdges = edges.filter(
                     (e: any) => {
@@ -625,7 +918,9 @@ export class AnilistService {
                         mangaList.push({
                             ...edge.node,
                             airingAnimeTitle: anime.title.english || anime.title.romaji,
+                            animeStatus: anime.status,
                             upcomingSeason: `${nextSeason} ${nextYear}`,
+                            airingBadge: 'Upcoming Next Season',
                         });
                         break; // 1 primary manga per anime adaptation to eliminate duplicate cards
                     }

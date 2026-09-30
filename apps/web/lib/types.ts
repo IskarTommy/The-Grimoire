@@ -32,6 +32,10 @@ export type MediaItem = {
   origin?: string;
   hasAnime?: boolean;
   airingAnimeTitle?: string;
+  animeStatus?: string;
+  airingBadge?: string;
+  currentSeason?: string;
+  upcomingSeason?: string;
 };
 
 export type NavKey =

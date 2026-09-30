@@ -56,6 +56,10 @@ export function mapAnilistItem(item: any): MediaItem {
         trending: true,
         hasAnime: hasAnime,
         airingAnimeTitle: item.airingAnimeTitle,
+        animeStatus: item.animeStatus,
+        airingBadge: item.airingBadge,
+        currentSeason: item.currentSeason,
+        upcomingSeason: item.upcomingSeason,
     };
 }
 
