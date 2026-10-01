@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Star,
@@ -13,12 +14,15 @@ import {
   MoreVertical,
   ExternalLink,
   Sparkles,
+  Play,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import type { MediaItem } from "@/lib/types";
 import { STATUS_META, TYPE_META, ACCENT_CLASSES } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import { useLibrary } from "@/hooks/use-library";
+import { fetchDirectChapterToRead } from "@/hooks/use-mangadex";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +46,7 @@ import {
 type LibraryMangaCardProps = {
   item: MediaItem;
   index?: number;
+  onSelect?: (item: MediaItem) => void;
 };
 
 const READING_STATUSES = [
@@ -52,7 +57,8 @@ const READING_STATUSES = [
   { key: "dropped", label: "Dropped", color: "text-rose-400 bg-rose-500/10 border-rose-500/30" },
 ];
 
-export function LibraryMangaCard({ item, index = 0 }: LibraryMangaCardProps) {
+export function LibraryMangaCard({ item, index = 0, onSelect }: LibraryMangaCardProps) {
+  const router = useRouter();
   const { getLibraryEntry, updateProgress, updateChapter, updateStatus, updateRating, removeFromLibrary } = useLibrary();
   const entry = getLibraryEntry(item.id);
 
@@ -64,6 +70,27 @@ export function LibraryMangaCard({ item, index = 0 }: LibraryMangaCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
+  const [launchingReader, setLaunchingReader] = useState(false);
+
+  const handleDirectRead = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      setLaunchingReader(true);
+      const chId = await fetchDirectChapterToRead(item.title, item.id, currentChapter);
+      if (chId) {
+        router.push(`/read/${item.id}/${chId}`);
+      } else if (onSelect) {
+        onSelect(item);
+      } else {
+        router.push(`/manga/${item.id}`);
+      }
+    } catch {
+      if (onSelect) onSelect(item);
+    } finally {
+      setLaunchingReader(false);
+    }
+  };
 
   const statusMeta = STATUS_META[item.status] || STATUS_META.ONGOING;
   const typeMeta = TYPE_META[item.type] || TYPE_META.MANGA;
@@ -131,18 +158,40 @@ export function LibraryMangaCard({ item, index = 0 }: LibraryMangaCardProps) {
     >
       {/* Cover Image Header */}
       <div className="relative aspect-[3/4] overflow-hidden">
-        <Link href={`/manga/${item.id}`} className="block h-full w-full">
+        <button
+          type="button"
+          onClick={() => (onSelect ? onSelect(item) : router.push(`/manga/${item.id}`))}
+          className="block h-full w-full text-left cursor-pointer"
+        >
           <img
             src={item.cover}
             alt={item.title}
             loading="lazy"
             className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
           />
-        </Link>
+        </button>
 
         {/* Ambient Top & Bottom Vignettes */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/85 via-black/40 to-transparent" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0f111c] via-[#0f111c]/60 to-transparent" />
+
+        {/* Direct 1-Click Read Button (Centered on hover) */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+          <button
+            type="button"
+            onClick={handleDirectRead}
+            disabled={launchingReader}
+            className="pointer-events-auto flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 px-4 py-2 text-xs font-bold text-white shadow-xl shadow-black/80 hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/20"
+            title="Read directly now"
+          >
+            {launchingReader ? (
+              <Loader2 className="h-4 w-4 animate-spin text-white" />
+            ) : (
+              <Play className="h-4 w-4 fill-white" />
+            )}
+            <span>{currentChapter > 0 ? `Ch. ${currentChapter + 1}` : "Read"}</span>
+          </button>
+        </div>
 
         {/* Top Floating Controls */}
         <div className="absolute inset-x-0 top-0 flex items-start justify-between p-2.5 z-10">
@@ -249,11 +298,15 @@ export function LibraryMangaCard({ item, index = 0 }: LibraryMangaCardProps) {
       <div className="flex flex-1 flex-col gap-3 p-3.5">
         {/* Title */}
         <div className="min-w-0">
-          <Link href={`/manga/${item.id}`}>
+          <button
+            type="button"
+            onClick={() => (onSelect ? onSelect(item) : router.push(`/manga/${item.id}`))}
+            className="text-left w-full cursor-pointer"
+          >
             <h3 className="truncate font-display text-sm font-bold text-white hover:text-violet-300 transition-colors leading-tight">
               {item.title}
             </h3>
-          </Link>
+          </button>
           <p className="mt-0.5 truncate text-[11px] text-white/50">
             {item.author || "Various Creators"}
           </p>

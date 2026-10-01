@@ -1,29 +1,57 @@
 "use client";
 
-import { useRef } from "react";
+import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Play, BookOpen, Tv } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, BookOpen, Tv, Loader2 } from "lucide-react";
 import type { MediaItem } from "@/lib/types";
 import { STATUS_META, ACCENT_CLASSES } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import { SectionHeader } from "./section-header";
+import { fetchDirectChapterToRead } from "@/hooks/use-mangadex";
 
 type ContinueReadingProps = {
   items: MediaItem[];
 };
 
 function ContinueCard({ item, index }: { item: MediaItem; index: number }) {
+  const router = useRouter();
+  const [launching, setLaunching] = useState(false);
+
   const accent = ACCENT_CLASSES[item.accent];
   const status = STATUS_META[item.status];
   const isAnime = item.type === "ANIME";
   const current = isAnime ? item.currentEpisode : item.currentChapter;
+
+  const handleLaunch = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isAnime) {
+      router.push(`/manga/${item.id}`);
+      return;
+    }
+    try {
+      setLaunching(true);
+      const chId = await fetchDirectChapterToRead(item.title, item.id, item.currentChapter || 0);
+      if (chId) {
+        router.push(`/read/${item.id}/${chId}`);
+      } else {
+        router.push(`/manga/${item.id}`);
+      }
+    } catch {
+      router.push(`/manga/${item.id}`);
+    } finally {
+      setLaunching(false);
+    }
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.4, delay: index * 0.07 }}
-      className="group relative w-[260px] shrink-0 overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] sm:w-[280px]"
+      onClick={handleLaunch}
+      className="group relative w-[260px] shrink-0 overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] sm:w-[280px] cursor-pointer hover:border-violet-500/30 transition-all shadow-md"
     >
       <div className="relative aspect-[16/10] overflow-hidden">
         <img
@@ -57,10 +85,16 @@ function ContinueCard({ item, index }: { item: MediaItem; index: number }) {
         {/* play cta */}
         <button
           type="button"
-          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white opacity-0 backdrop-blur-md transition-all duration-300 hover:bg-white/20 group-hover:opacity-100"
+          onClick={handleLaunch}
+          disabled={launching}
+          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white opacity-0 backdrop-blur-md transition-all duration-300 hover:bg-white/20 group-hover:opacity-100 shadow-md cursor-pointer"
           aria-label="Continue"
         >
-          <Play className="h-4 w-4 fill-white" />
+          {launching ? (
+            <Loader2 className="h-4 w-4 animate-spin text-white" />
+          ) : (
+            <Play className="h-4 w-4 fill-white" />
+          )}
         </button>
 
         {/* bottom info over image */}

@@ -624,7 +624,7 @@ export class AnilistService {
     }
 
     async getMangaById(id: number) {
-        const cacheKey = `manga_detail_${id}`;
+        const cacheKey = `manga_detail_v2_${id}`;
         const cached = this.getCached<any>(cacheKey);
         if (cached) return cached;
 
@@ -632,17 +632,139 @@ export class AnilistService {
             const query = `
                 query ($id: Int) {
                     Media(id: $id, type: MANGA) {
-                        ${this.MEDIA_FIELDS}
+                        id
+                        title { romaji english native }
+                        coverImage { extraLarge large color }
+                        bannerImage
+                        countryOfOrigin
+                        description(asHtml: false)
+                        status
+                        chapters
+                        volumes
+                        averageScore
+                        meanScore
+                        popularity
+                        favourites
+                        genres
+                        tags {
+                            id
+                            name
+                            description
+                            category
+                            rank
+                            isMediaSpoiler
+                        }
+                        startDate { year month day }
+                        endDate { year month day }
+                        rankings {
+                            id
+                            rank
+                            type
+                            allTime
+                            context
+                            year
+                        }
+                        characters(sort: [ROLE, RELEVANCE, ID], perPage: 24) {
+                            edges {
+                                role
+                                node {
+                                    id
+                                    name { full native alternative }
+                                    image { large medium }
+                                }
+                            }
+                        }
+                        staff(sort: [RELEVANCE, ID], perPage: 16) {
+                            edges {
+                                role
+                                node {
+                                    id
+                                    name { full native }
+                                    image { large medium }
+                                }
+                            }
+                        }
+                        relations {
+                            edges {
+                                relationType(version: 2)
+                                node {
+                                    id
+                                    type
+                                    format
+                                    status
+                                    title { romaji english native }
+                                    coverImage { large medium color }
+                                    bannerImage
+                                    chapters
+                                    episodes
+                                    averageScore
+                                    startDate { year }
+                                }
+                            }
+                        }
+                        externalLinks {
+                            id
+                            url
+                            site
+                            icon
+                            color
+                        }
                     }
                 }
             `;
             const data = await this.queryAniList(query, { id });
-            const result = data?.Media;
-            if (result) {
-                this.setCached(cacheKey, result, 30 * 60 * 1000);
-                return result;
+            const manga = data?.Media;
+            if (!manga) return null;
+
+            // Enrich manga with anime detection flag
+            manga.hasAnime = this.detectHasAnime(manga);
+
+            // If an anime adaptation exists, fetch voice actors for the manga's characters
+            const animeRelation = manga.relations?.edges?.find(
+                (e: any) => e.node?.type === 'ANIME' && ['ADAPTATION', 'ALTERNATIVE', 'PARENT'].includes(e.relationType)
+            );
+
+            if (animeRelation?.node?.id) {
+                const animeId = animeRelation.node.id;
+                const animeVaQuery = `
+                    query ($id: Int) {
+                        Media(id: $id, type: ANIME) {
+                            characters(sort: [ROLE, RELEVANCE, ID], perPage: 30) {
+                                edges {
+                                    node { id }
+                                    voiceActors(language: JAPANESE) {
+                                        id
+                                        name { full native }
+                                        image { large medium }
+                                        languageV2
+                                    }
+                                }
+                            }
+                        }
+                    }
+                `;
+                try {
+                    const animeData = await this.queryAniList(animeVaQuery, { id: animeId });
+                    const vaMap = new Map<number, any>();
+                    for (const edge of animeData?.Media?.characters?.edges || []) {
+                        if (edge.node?.id && Array.isArray(edge.voiceActors) && edge.voiceActors.length > 0) {
+                            vaMap.set(edge.node.id, edge.voiceActors[0]);
+                        }
+                    }
+
+                    for (const charEdge of manga.characters?.edges || []) {
+                        const va = vaMap.get(charEdge.node?.id);
+                        if (va) {
+                            charEdge.voiceActor = va;
+                        }
+                    }
+                } catch (vaErr) {
+                    console.warn(`Could not enrich anime voice actors for manga ${id}:`, (vaErr as any)?.message || vaErr);
+                }
             }
-            return null;
+
+            this.setCached(cacheKey, manga, 30 * 60 * 1000);
+            return manga;
         } catch (error) {
             console.error('AniList Manga By ID Fetch Error:', (error as any)?.message || error);
             const stale = this.getStaleFallback<any>(cacheKey);

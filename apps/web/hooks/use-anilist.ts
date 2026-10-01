@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
-import { MediaItem } from "../lib/types";
+import {
+  MediaItem,
+  MangaDetail,
+  CharacterItem,
+  StaffItem,
+  RelationItem,
+  TagItem,
+  ExternalLinkItem,
+} from "../lib/types";
 
 
 export function detectHasAnime(item: any): boolean {
@@ -63,6 +71,108 @@ export function mapAnilistItem(item: any): MediaItem {
     };
 }
 
+export function mapAnilistDetail(item: any): MangaDetail {
+    const base = mapAnilistItem(item);
+
+    const characters: CharacterItem[] = (item.characters?.edges || []).map((e: any) => ({
+        id: e.node?.id,
+        role: e.role || 'SUPPORTING',
+        name: {
+            full: e.node?.name?.full || 'Unknown',
+            native: e.node?.name?.native || undefined,
+            alternative: e.node?.name?.alternative || [],
+        },
+        image: {
+            large: e.node?.image?.large || e.node?.image?.medium || '',
+            medium: e.node?.image?.medium || '',
+        },
+        voiceActor: e.voiceActor ? {
+            id: e.voiceActor.id,
+            name: {
+                full: e.voiceActor.name?.full || '',
+                native: e.voiceActor.name?.native || undefined,
+            },
+            image: {
+                large: e.voiceActor.image?.large || e.voiceActor.image?.medium || '',
+                medium: e.voiceActor.image?.medium || '',
+            },
+            languageV2: e.voiceActor.languageV2 || 'Japanese',
+        } : undefined,
+    }));
+
+    const staff: StaffItem[] = (item.staff?.edges || []).map((e: any) => ({
+        id: e.node?.id,
+        role: e.role || 'Staff',
+        name: {
+            full: e.node?.name?.full || 'Unknown',
+            native: e.node?.name?.native || undefined,
+        },
+        image: {
+            large: e.node?.image?.large || e.node?.image?.medium || '',
+            medium: e.node?.image?.medium || '',
+        },
+    }));
+
+    const relations: RelationItem[] = (item.relations?.edges || []).map((e: any) => ({
+        id: e.node?.id,
+        relationType: e.relationType || 'RELATED',
+        type: e.node?.type || 'MANGA',
+        format: e.node?.format || '',
+        status: e.node?.status || '',
+        title: {
+            romaji: e.node?.title?.romaji || '',
+            english: e.node?.title?.english || undefined,
+            native: e.node?.title?.native || undefined,
+        },
+        coverImage: e.node?.coverImage ? {
+            large: e.node?.coverImage?.large || '',
+            medium: e.node?.coverImage?.medium || '',
+            color: e.node?.coverImage?.color || undefined,
+        } : undefined,
+        bannerImage: e.node?.bannerImage || undefined,
+        chapters: e.node?.chapters || null,
+        episodes: e.node?.episodes || null,
+        averageScore: e.node?.averageScore || null,
+        startDate: e.node?.startDate ? {
+            year: e.node?.startDate?.year || undefined,
+        } : undefined,
+    }));
+
+    const tags: TagItem[] = (item.tags || []).map((t: any) => ({
+        id: t.id,
+        name: t.name,
+        description: t.description || undefined,
+        category: t.category || undefined,
+        rank: t.rank || undefined,
+        isMediaSpoiler: Boolean(t.isMediaSpoiler),
+    }));
+
+    const externalLinks: ExternalLinkItem[] = (item.externalLinks || []).map((l: any) => ({
+        id: l.id,
+        url: l.url,
+        site: l.site,
+        icon: l.icon || undefined,
+        color: l.color || undefined,
+    }));
+
+    const primaryCreator = staff.find(s => ['Story & Art', 'Story', 'Original Story', 'Author'].includes(s.role)) || staff[0];
+
+    return {
+        ...base,
+        author: primaryCreator ? primaryCreator.name.full : base.author,
+        nativeTitle: item.title?.native,
+        volumes: item.volumes || null,
+        meanScore: item.meanScore || null,
+        popularity: item.popularity || 0,
+        favourites: item.favourites || 0,
+        tags,
+        characters,
+        staff,
+        relations,
+        externalLinks,
+        rankings: item.rankings || [],
+    };
+}
 
 export function useTrendingManga() {
     const [media, setMedia] = useState<MediaItem[]>([]);
@@ -329,6 +439,57 @@ export function useUpcomingSeasonalManga() {
     }, []);
 
     return { upcoming, loading };
+}
+
+export function useMangaDetail(id: string) {
+    const [manga, setManga] = useState<MangaDetail | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let isMounted = true;
+        if (!id) {
+            setLoading(false);
+            return;
+        }
+
+        async function fetchDetail() {
+            setLoading(true);
+            setError(null);
+            try {
+                const response = await fetch(`http://127.0.0.1:3000/anilist/manga/${id}`);
+                if (!response.ok) {
+                    if (isMounted) {
+                        setError(`Failed to fetch manga (status ${response.status})`);
+                        setManga(null);
+                    }
+                    return;
+                }
+                const json = await response.json();
+                if (isMounted) {
+                    if (json && json.id) {
+                        setManga(mapAnilistDetail(json));
+                    } else {
+                        setManga(null);
+                        setError('Manga not found');
+                    }
+                }
+            } catch (err: any) {
+                console.error('Failed to load manga details:', err);
+                if (isMounted) {
+                    setError(err?.message || 'Network error');
+                    setManga(null);
+                }
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        }
+
+        fetchDetail();
+        return () => { isMounted = false; };
+    }, [id]);
+
+    return { manga, loading, error };
 }
 
 

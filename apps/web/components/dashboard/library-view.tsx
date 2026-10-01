@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import type { ItemType, MediaItem } from "@/lib/types";
 import { LibraryMangaCard } from "./library-manga-card";
 import { LibraryMangaRow } from "./library-manga-row";
+import { LibraryDetailDrawer } from "./library-detail-drawer";
 import { SectionHeader } from "./section-header";
 import { cn } from "@/lib/utils";
 import { useLibrary } from "@/hooks/use-library";
@@ -72,6 +73,7 @@ export function LibraryView({
   const [sort, setSort] = useState<SortKey>("updated");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState(propQuery);
+  const [selectedManga, setSelectedManga] = useState<MediaItem | null>(null);
 
   // Available formats
   const availableTypes = useMemo(() => {
@@ -300,16 +302,33 @@ export function LibraryView({
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
           {visible.map((item, i) => (
-            <LibraryMangaCard key={item.id} item={item} index={i} />
+            <LibraryMangaCard
+              key={item.id}
+              item={item}
+              index={i}
+              onSelect={(m) => setSelectedManga(m)}
+            />
           ))}
         </div>
       ) : (
         <div className="flex flex-col gap-2.5">
           {visible.map((item, i) => (
-            <LibraryMangaRow key={item.id} item={item} index={i} />
+            <LibraryMangaRow
+              key={item.id}
+              item={item}
+              index={i}
+              onSelect={(m) => setSelectedManga(m)}
+            />
           ))}
         </div>
       )}
+
+      {/* In-Library Detail Drawer & Reader Launchpad */}
+      <LibraryDetailDrawer
+        item={selectedManga}
+        open={Boolean(selectedManga)}
+        onClose={() => setSelectedManga(null)}
+      />
     </section>
   );
 }

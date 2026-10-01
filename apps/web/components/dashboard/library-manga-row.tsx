@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Star, BookOpen, Tv, Plus, Minus, Trash2, Check, ExternalLink } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Star, BookOpen, Tv, Plus, Minus, Trash2, Check, ExternalLink, Play, Loader2 } from "lucide-react";
 import Link from "next/link";
 import type { MediaItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useLibrary } from "@/hooks/use-library";
+import { fetchDirectChapterToRead } from "@/hooks/use-mangadex";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +31,7 @@ import {
 type LibraryMangaRowProps = {
   item: MediaItem;
   index: number;
+  onSelect?: (item: MediaItem) => void;
 };
 
 const READING_STATUSES = [
@@ -39,7 +42,8 @@ const READING_STATUSES = [
   { key: "dropped", label: "Dropped", color: "text-rose-400 bg-rose-500/10 border-rose-500/30" },
 ];
 
-export function LibraryMangaRow({ item, index }: LibraryMangaRowProps) {
+export function LibraryMangaRow({ item, index, onSelect }: LibraryMangaRowProps) {
+  const router = useRouter();
   const { getLibraryEntry, updateProgress, updateChapter, updateStatus, updateRating, removeFromLibrary } = useLibrary();
   const entry = getLibraryEntry(item.id);
 
@@ -51,6 +55,27 @@ export function LibraryMangaRow({ item, index }: LibraryMangaRowProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
+  const [launchingReader, setLaunchingReader] = useState(false);
+
+  const handleDirectRead = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      setLaunchingReader(true);
+      const chId = await fetchDirectChapterToRead(item.title, item.id, currentChapter);
+      if (chId) {
+        router.push(`/read/${item.id}/${chId}`);
+      } else if (onSelect) {
+        onSelect(item);
+      } else {
+        router.push(`/manga/${item.id}`);
+      }
+    } catch {
+      if (onSelect) onSelect(item);
+    } finally {
+      setLaunchingReader(false);
+    }
+  };
 
   const total = item.totalChapters;
   const percent = total && total > 0 ? Math.min(100, Math.round((currentChapter / total) * 100)) : null;
@@ -102,21 +127,29 @@ export function LibraryMangaRow({ item, index }: LibraryMangaRowProps) {
         </span>
 
         {/* Thumbnail */}
-        <Link href={`/manga/${item.id}`} className="shrink-0 relative overflow-hidden rounded-lg aspect-[3/4] w-11 h-[58px] border border-white/10 bg-white/5">
+        <button
+          type="button"
+          onClick={() => (onSelect ? onSelect(item) : router.push(`/manga/${item.id}`))}
+          className="shrink-0 relative overflow-hidden rounded-lg aspect-[3/4] w-11 h-[58px] border border-white/10 bg-white/5 cursor-pointer text-left"
+        >
           <img
             src={item.cover}
             alt={item.title}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
             loading="lazy"
           />
-        </Link>
+        </button>
 
         {/* Title and metadata */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <Link href={`/manga/${item.id}`} className="truncate font-display text-sm font-bold text-white hover:text-violet-300 transition-colors">
+            <button
+              type="button"
+              onClick={() => (onSelect ? onSelect(item) : router.push(`/manga/${item.id}`))}
+              className="text-left truncate font-display text-sm font-bold text-white hover:text-violet-300 transition-colors cursor-pointer"
+            >
               {item.title}
-            </Link>
+            </button>
             {item.hasAnime && (
               <span className="hidden sm:inline-flex items-center gap-1 rounded bg-sky-500/20 border border-sky-400/30 px-1 py-0.5 text-[9px] font-bold text-sky-300">
                 <Tv className="h-2.5 w-2.5" />
@@ -140,6 +173,21 @@ export function LibraryMangaRow({ item, index }: LibraryMangaRowProps) {
 
       {/* Right Controls: Status, Chapter Stepper, Rating, Remove */}
       <div className="flex flex-wrap items-center gap-3 sm:gap-4 justify-between sm:justify-end shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
+        {/* Direct Read CTA Button */}
+        <button
+          type="button"
+          onClick={handleDirectRead}
+          disabled={launchingReader}
+          className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold text-white bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 hover:brightness-110 transition-all shadow-sm shadow-violet-600/30 cursor-pointer hover:scale-105 active:scale-95"
+          title="Read directly"
+        >
+          {launchingReader ? (
+            <Loader2 className="h-3 w-3 animate-spin text-white" />
+          ) : (
+            <Play className="h-3 w-3 fill-white" />
+          )}
+          <span>{currentChapter > 0 ? `Ch. ${currentChapter + 1}` : "Read"}</span>
+        </button>
         {/* Quick Action: Start Reading if Plan to Read */}
         {rawStatus === "plan_to_read" && (
           <button
